@@ -11,27 +11,22 @@
 <body>
   <main class="app">
     <header class="top">
-      <img class="avatar" src="icons/logo.jpg" alt="Nexven Drops" />
-      <div><b>Nexven Drops</b><div class="muted">кейсы в TON</div></div>
+      <img class="avatar" src="icons/logo.jpg" alt="" />
+      <div><b>Nexven Drops</b><div class="muted" id="who">игрок</div></div>
       <div class="spacer"></div>
       <button class="deposit" onclick="openSheet()">+ Пополнить</button>
       <div class="balance"><img src="icons/ton.svg" alt="" /><span data-bal>0</span></div>
     </header>
-    <section class="cases" id="cases"></section>
-    <section class="live hidden" id="live">
-      <h2>Лента</h2>
-      <div id="feed"></div>
-      <h2>Лидерборд</h2>
-      <div id="board"></div>
-    </section>
-    <section class="live hidden" id="admin">
+    <section id="cases" class="cases"></section>
+    <section id="live" class="live hidden"><h2>Лента</h2><div id="feed"></div><h2>Лидерборд</h2><div id="board"></div></section>
+    <section id="admin" class="live hidden">
       <h2>Админ-панель</h2>
-      <p class="muted">Админ принимает заказ, но не выдаёт TON и кейсы. Выдавать может только владелец.</p>
+      <p class="muted">Админ принимает заказ. Выдавать TON и кейсы может только владелец.</p>
       <div id="orders"></div>
       <div id="ownerBox">
         <input id="target" placeholder="ID игрока" />
         <input id="amount" placeholder="Сумма TON" />
-        <input id="itemName" placeholder="Название кейса" />
+        <input id="itemName" placeholder="Название" />
         <button class="open" onclick="adminAct('give_ton')">Выдать TON</button>
         <button class="open" onclick="adminAct('take_ton')">Забрать TON</button>
         <button class="open" onclick="adminAct('give_item')">Выдать кейс</button>
@@ -46,10 +41,10 @@
   </nav>
   <div class="sheet" id="sheet" onclick="if (event.target.id === 'sheet') closeSheet()">
     <div class="modal">
-      <div class="head"><h2>Заказ на пополнение</h2><button class="x" onclick="closeSheet()">×</button></div>
-      <p class="note">Заказ видят админы. Принятие не начисляет TON. Начисляет только владелец.</p>
+      <div class="head"><h2>Заказ</h2><button class="x" onclick="closeSheet()">×</button></div>
+      <p class="note">Заказ виден в админ-панели. Принятие само ничего не выдаёт.</p>
       <input id="orderText" placeholder="Сколько TON нужно" />
-      <button class="go" onclick="makeOrder()">Отправить заказ</button>
+      <button class="go" onclick="makeOrder()">Отправить</button>
     </div>
   </div>
   <div class="win" id="win"><div class="card"><img id="winImg" alt="" /><h2 id="winName"></h2><p id="winPrice"></p><button class="go" onclick="closeWin()">Ок</button></div></div>

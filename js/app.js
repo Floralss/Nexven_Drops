@@ -1,121 +1,135 @@
 const CASES = [
-  { id: "dust", name: "Пыль", price: 0.2, image: "icons/case.jpg", note: "сомнительный дроп", nft: "0.05%" },
-  { id: "bear", name: "Мишка", price: 0.8, image: "icons/bear.jpg", note: "в основном мишки", nft: "0.08%" },
-  { id: "heart", name: "Сердца", price: 2.4, image: "icons/heart.jpg", note: "мишки и сердца", nft: "0.15%" },
-  { id: "crown", name: "Корона", price: 8, image: "icons/crown.jpg", note: "подарки, не NFT", nft: "0.25%" },
-  { id: "relic", name: "Реликт", price: 24, image: "icons/gem.jpg", note: "NFT почти не падает", nft: "0.40%" }
+  { id: "dust", name: "Пыль", price: 0.2, image: "icons/case.jpg", chance: "мишка 18% · NFT 0.05%", note: "сомнительный дроп" },
+  { id: "bear", name: "Мишка", price: 0.8, image: "icons/bear.jpg", chance: "мишка 55% · NFT 0.08%", note: "в основном мишки" },
+  { id: "heart", name: "Сердца", price: 2.4, image: "icons/heart.jpg", chance: "сердце 30% · NFT 0.15%", note: "мишки и сердца" },
+  { id: "crown", name: "Корона", price: 8, image: "icons/crown.jpg", chance: "корона 12% · NFT 0.25%", note: "подарки, не NFT" },
+  { id: "relic", name: "Реликт", price: 24, image: "icons/gem.jpg", chance: "редкое 8% · NFT 0.40%", note: "NFT почти не падает" }
 ];
-const API = location.origin;
-let me = { id: 0, name: "Игрок" };
+const OWNER = 8920532333;
+const ADMINS = [7064801154, 8866989412];
 let qty = 1;
-let state = { user: { ton: 0, items: [] }, feed: [], leaderboard: [], orders: [], role: "user" };
+let me = { id: 0, name: "Игрок" };
+let db = { users: {}, feed: [], orders: [] };
 
+function load() {
+  try { db = JSON.parse(localStorage.nexvenDb || "") || db; } catch (e) { db = { users: {}, feed: [], orders: [] }; }
+  db.users = db.users || {};
+  db.feed = db.feed || [];
+  db.orders = db.orders || [];
+}
+function save() { localStorage.nexvenDb = JSON.stringify(db); }
+function user() {
+  return db.users[me.id] || (db.users[me.id] = { name: me.name, ton: 0, won: 0, items: [] });
+}
+function role() {
+  if (me.id === OWNER) return "owner";
+  if (ADMINS.includes(me.id)) return "admin";
+  return "user";
+}
 const money = (n) => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
-function roll(demo, caseId) {
+function roll(id, demo) {
+  const nft = id === "relic" ? 0.4 : id === "crown" ? 0.25 : id === "heart" ? 0.15 : id === "bear" ? 0.08 : 0.05;
   const pool = demo
-    ? [["Редкая мишка", 1.4, "icons/bear.jpg", 34], ["Сердце", 2.2, "icons/heart.jpg", 28], ["Корона", 4, "icons/crown.jpg", 22], ["Камень", 6, "icons/gem.jpg", 16]]
-    : [["Наклейка", 0.02, "icons/case.jpg", 46], ["Крошка", 0.05, "icons/logo.jpg", 28], ["Мишка", 0.16, "icons/bear.jpg", 20], ["Сердце", 0.4, "icons/heart.jpg", 5], ["Корона", 1.1, "icons/crown.jpg", 0.9], ["NFT камень", 8, "icons/gem.jpg", caseId === "relic" ? 0.4 : 0.05]];
-  const total = pool.reduce((s, row) => s + row[3], 0);
-  let hit = Math.random() * total;
+    ? [["Редкая мишка", 1.6, "icons/bear.jpg", 40], ["Сердце", 2.4, "icons/heart.jpg", 30], ["Корона", 5, "icons/crown.jpg", 20], ["Камень", 8, "icons/gem.jpg", 10]]
+    : [["Наклейка", 0.02, "icons/case.jpg", 42], ["Крошка", 0.05, "icons/logo.jpg", 24], ["Мишка", 0.18, "icons/bear.jpg", 26], ["Сердце", 0.45, "icons/heart.jpg", 6], ["Корона", 1.2, "icons/crown.jpg", 1.5], ["NFT камень", 9, "icons/gem.jpg", nft]];
+  let hit = Math.random() * pool.reduce((s, row) => s + row[3], 0);
   for (const row of pool) {
     hit -= row[3];
     if (hit <= 0) return { name: row[0], ton: row[1], image: row[2] };
   }
-  return { name: pool[0][0], ton: pool[0][1], image: pool[0][2] };
+  return { name: "Мишка", ton: 0.18, image: "icons/bear.jpg" };
 }
 
-async function api(path, extra) {
-  const res = await fetch(API + path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: me.id, name: me.name, ...extra })
-  });
-  return res.json();
+function paint() {
+  document.querySelectorAll("[data-bal]").forEach((el) => { el.textContent = money(user().ton); });
+  document.getElementById("who").textContent = role() === "owner" ? "владелец" : role() === "admin" ? "админ" : "игрок";
+  document.getElementById("ownerBox").classList.toggle("hidden", role() !== "owner");
+  const rows = db.orders.filter((o) => role() !== "user" || o.user_id === me.id).slice(-20).reverse();
+  document.getElementById("orders").innerHTML = rows.map((o) => `<div class="line">${o.name}: ${o.text} · ${o.status} ${role() !== "user" && o.status === "new" ? `<button onclick="setOrder('${o.id}','accepted')">Принять</button> <button onclick="setOrder('${o.id}','rejected')">Отклонить</button>` : ""}</div>`).join("") || "<div class='line'>Заказов нет</div>";
+  const board = Object.entries(db.users).map(([id, rec]) => ({ id, name: rec.name, won: rec.won || 0 })).sort((a, b) => b.won - a.won).slice(0, 15);
+  document.getElementById("board").innerHTML = board.map((row, i) => `<div class="line">${i + 1}. ${row.name} · ${money(row.won)} TON</div>`).join("") || "<div class='line'>Пока пусто</div>";
+  document.getElementById("feed").innerHTML = db.feed.slice(0, 20).map((row) => `<div class="line">${row.name} · ${row.item} · ${money(row.ton)} TON</div>`).join("") || "<div class='line'>Пока тихо</div>";
 }
 
-async function refresh() {
-  const data = await api("/api/state");
-  if (!data.ok) return;
-  state = data;
-  document.querySelectorAll("[data-bal]").forEach((el) => { el.textContent = money(state.user.ton); });
-  document.getElementById("feed").innerHTML = (state.feed || []).map((row) => `<div class="row"><b>${row.name}</b> выбил ${row.item} · ${money(row.ton)} TON</div>`).join("") || "<div class='row'>Пока тихо</div>";
-  document.getElementById("board").innerHTML = (state.leaderboard || []).map((row, i) => `<div class="row">${i + 1}. ${row.name} · ${money(row.won)} TON</div>`).join("") || "<div class='row'>Пусто</div>";
-  const staff = state.role === "owner" || state.role === "admin";
-  document.getElementById("admin").classList.toggle("hidden", !staff);
-  document.getElementById("ownerBox").classList.toggle("hidden", state.role !== "owner");
-  document.getElementById("orders").innerHTML = (state.orders || []).map((o) => `<div class="row">${o.name}: ${o.text} · ${o.status} ${staff && o.status === "new" ? `<button onclick="setOrder('${o.id}','accepted')">Принять</button> <button onclick="setOrder('${o.id}','rejected')">Отклонить</button>` : ""}</div>`).join("") || "<div class='row'>Заказов нет</div>";
-}
-
-function renderCases() {
+function render() {
   document.getElementById("cases").innerHTML = CASES.map((c) => `
     <article class="case">
       <img src="${c.image}" alt="" />
       <div>
         <h3>${c.name}</h3>
-        <div class="muted">${c.note}<br>NFT на витрине ${c.nft}, почти не падает</div>
+        <div class="muted">${c.note}<br>${c.chance}</div>
         <div class="ton">${money(c.price)} TON</div>
-        <div class="qty">${[1,2,3,4,5].map((n) => `<button class="${qty === n ? "on" : ""}" onclick="setQty(${n})">${n}</button>`).join("")}</div>
+        <div class="qty">${[1, 2, 3, 4, 5].map((n) => `<button class="${qty === n ? "on" : ""}" onclick="setQty(${n})">${n}</button>`).join("")}</div>
         <button class="open" onclick="openCase('${c.id}', false)">Открыть x${qty}</button>
         <button class="demo" onclick="openCase('${c.id}', true)">Демо версия</button>
       </div>
     </article>`).join("");
 }
 
-function setQty(n) { qty = n; renderCases(); }
-
-async function openCase(id, demo) {
+function setQty(n) { qty = n; render(); }
+function openCase(id, demo) {
   const found = CASES.find((c) => c.id === id);
   const count = demo ? 1 : qty;
-  const cost = found.price * count;
-  if (!demo && Number(state.user.ton) < cost) { openSheet(); return; }
-  const drops = Array.from({ length: count }, () => roll(demo, id));
+  const meUser = user();
+  if (!demo && meUser.ton < found.price * count) { openSheet(); return; }
+  const drops = Array.from({ length: count }, () => roll(id, demo));
   if (!demo) {
-    state.user.ton = Number(state.user.ton) - cost;
-    state.user.items = state.user.items || [];
-    drops.forEach((d) => state.user.items.push(d));
-    state.user.won = Number(state.user.won || 0) + drops.reduce((s, d) => s + d.ton, 0);
-    state.user.opens = Number(state.user.opens || 0) + count;
-    await api("/api/drop", { item: drops.map((d) => d.name).join(", "), ton: drops.reduce((s, d) => s + d.ton, 0), spent: cost });
+    meUser.ton = Math.round((meUser.ton - found.price * count) * 100) / 100;
+    meUser.won = Math.round(((meUser.won || 0) + drops.reduce((s, d) => s + d.ton, 0)) * 100) / 100;
+    meUser.items = meUser.items || [];
+    drops.forEach((d) => meUser.items.push(d));
+    db.feed.unshift({ name: me.name, item: drops.map((d) => d.name).join(", "), ton: drops.reduce((s, d) => s + d.ton, 0) });
+    save();
   }
   document.getElementById("winImg").src = drops[0].image;
   document.getElementById("winName").textContent = demo ? "Демо, награда не даётся" : drops.map((d) => d.name).join(", ");
-  document.getElementById("winPrice").textContent = drops.map((d) => `${d.name} ${money(d.ton)} TON`).join(" · ");
+  document.getElementById("winPrice").textContent = drops.map((d) => `${d.name} · ${money(d.ton)} TON`).join(" · ");
   document.getElementById("win").classList.add("on");
-  refresh();
+  paint();
 }
-
 function tab(name, btn) {
   document.querySelectorAll(".dock button").forEach((b) => b.classList.remove("on"));
   btn.classList.add("on");
   ["cases", "live", "admin"].forEach((id) => document.getElementById(id).classList.toggle("hidden", id !== name));
+  paint();
 }
 function openSheet() { document.getElementById("sheet").classList.add("on"); }
 function closeSheet() { document.getElementById("sheet").classList.remove("on"); }
 function closeWin() { document.getElementById("win").classList.remove("on"); }
-async function makeOrder() {
-  const text = document.getElementById("orderText").value || "Пополнить TON";
-  await api("/api/order", { text });
+function makeOrder() {
+  db.orders.push({ id: "o" + Date.now(), user_id: me.id, name: me.name, text: document.getElementById("orderText").value || "Пополнить TON", status: "new" });
+  save();
   closeSheet();
-  refresh();
+  paint();
 }
-async function setOrder(orderId, status) { await api("/api/order/status", { order_id: orderId, status }); refresh(); }
-async function adminAct(action) {
-  await api("/api/admin", { action, target: Number(document.getElementById("target").value), amount: Number(document.getElementById("amount").value), item: document.getElementById("itemName").value });
-  refresh();
+function setOrder(id, status) {
+  const order = db.orders.find((o) => o.id === id);
+  if (order && role() !== "user") order.status = status;
+  save();
+  paint();
 }
-function boot() {
-  const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
-  me.id = tg ? tg.id : Number(localStorage.nexvenId || 0);
-  me.name = tg ? tg.first_name : (localStorage.nexvenName || "Игрок");
-  if (!me.id) {
-    me.id = Number(prompt("Твой Telegram ID", "8920532333") || 0);
-    me.name = prompt("Имя", "Игрок") || "Игрок";
-    localStorage.nexvenId = me.id;
-    localStorage.nexvenName = me.name;
-  }
-  renderCases();
-  refresh();
-  setInterval(refresh, 4000);
+function adminAct(action) {
+  if (role() !== "owner") return;
+  const target = String(document.getElementById("target").value || "");
+  const amount = Number(document.getElementById("amount").value || 0);
+  const rec = db.users[target] || (db.users[target] = { name: target, ton: 0, won: 0, items: [] });
+  if (action === "give_ton") rec.ton = Math.round((Number(rec.ton) + amount) * 100) / 100;
+  if (action === "take_ton") rec.ton = Math.max(0, Math.round((Number(rec.ton) - amount) * 100) / 100);
+  if (action === "give_item") rec.items.push({ name: document.getElementById("itemName").value || "Кейс", ton: amount });
+  if (action === "clear_items") rec.items = [];
+  save();
+  paint();
 }
-boot();
+load();
+if (window.Telegram && Telegram.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+  const tgUser = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+  if (tgUser) { me = { id: tgUser.id, name: tgUser.first_name || "Игрок" }; }
+}
+if (!me.id) me = { id: OWNER, name: "Владелец" };
+user().name = me.name;
+save();
+render();
+paint();
