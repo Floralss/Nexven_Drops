@@ -72,7 +72,9 @@
         { name: 'Наклейка', value: 0.03, chance: 28 },
         { name: 'Сердце', value: 0.06, chance: 18 },
         { name: 'Мишка', value: 0.10, chance: 11.95 },
-        { name: 'Plush Pepe', value: 180, chance: 0.05, nft: true }
+        { name: '1 TON', value: 1, chance: 8 },
+        { name: 'Мишка', value: 0.1, chance: 20 },
+        { name: 'Plush Pepe', value: 180, chance: 0, nft: true }
       ]
     },
     cheap: {
@@ -189,9 +191,14 @@
     if (mode === 'cs2') user.inventory_cs2 = arr;
     else user.inventory = arr;
   }
-  function isAdminUser() {
-    return user && ADMIN_IDS.indexOf(user.id) !== -1;
+  function sameId(a, b) { return Number(a) === Number(b); }
+  function isStaff() {
+    if (!user) return false;
+    if (sameId(user.id, OWNER_ID)) return true;
+    return ADMIN_IDS.some(function (id) { return sameId(user.id, id); });
   }
+  function isAdminUser() { return isStaff(); }
+
   function skinIcon(name) {
     // simple colored plate with weapon initials
     var colors = ['#3d5a80','#ee6c4d','#293241','#98c1d9','#e0fbfc','#1b4332','#7f4f24','#5e60ce'];
@@ -208,11 +215,13 @@
   }
 
   function roll(prizes) {
+    var pool = prizes.filter(function (p) { return !p.nft && p.chance > 0; });
+    if (!pool.length) pool = prizes.filter(function (p) { return !p.nft; });
     var t = 0, i;
-    for (i = 0; i < prizes.length; i++) t += prizes[i].chance;
+    for (i = 0; i < pool.length; i++) t += pool[i].chance;
     var r = Math.random() * t;
-    for (i = 0; i < prizes.length; i++) { r -= prizes[i].chance; if (r <= 0) return prizes[i]; }
-    return prizes[prizes.length - 1];
+    for (i = 0; i < pool.length; i++) { r -= pool[i].chance; if (r <= 0) return pool[i]; }
+    return pool[pool.length - 1];
   }
 
   /* ===== SYNC: CloudStorage (cross-device) + localStorage ===== */
@@ -574,7 +583,7 @@
   function renderProf() {
     var c = $('prof'); if (!c || !user) return;
     var av = user.photo_url ? '<img src="' + user.photo_url + '" alt="">' : ((user.first_name || '?')[0] || '?').toUpperCase();
-    var adminBtn = ADMIN_IDS.indexOf(user.id) !== -1 ? '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Admin panel</button>' : '';
+    var adminBtn = isStaff() ? '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button><div class="pid">ID ' + user.id + '</div>' : '<div class="pid">ID ' + (user && user.id) + '</div>';
     c.innerHTML = '<div class="bav">' + av + '</div><div class="pn">' + (user.first_name || 'Player') + '</div><div class="pid">ID: ' + user.id + (user.username ? ' · @' + user.username : '') + '</div><div class="ps"><div class="pst"><div class="pv">' + (user.balance || 0) + '</div><div class="pl">Balance</div></div><div class="pst"><div class="pv">' + (mode === 'cs2' ? (user.inventory_cs2 || []).length : (user.inventory || []).length) + '</div><div class="pl">Items</div></div><div class="pst"><div class="pv">' + (user.total_deposited || 0) + '</div><div class="pl">Deposited</div></div><div class="pst"><div class="pv">' + (user.total_spent || 0) + '</div><div class="pl">Spent</div></div></div>' + adminBtn;
     var ba = $('btnOpenAdmin');
     if (ba) ba.onclick = function () { $('modAdmin').classList.add('on'); };

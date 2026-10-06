@@ -90,11 +90,11 @@
     return 'data:image/svg+xml,' + encodeURIComponent(s);
   }
   var GAME_IMG = {
-    roulette: svgIcon('<circle cx="32" cy="32" r="20" fill="none" stroke="#e74c3c" stroke-width="8" stroke-dasharray="20 12"/><circle cx="32" cy="32" r="20" fill="none" stroke="#222" stroke-width="8" stroke-dasharray="20 12" stroke-dashoffset="16"/><circle cx="32" cy="32" r="6" fill="#f0c14b"/>', '#2a1a28'),
-    crash: svgIcon('<path d="M32 8 L40 40 L32 34 L24 40 Z" fill="#e74c3c"/><rect x="28" y="38" width="8" height="10" fill="#c0c0c0"/><path d="M26 50 L22 58 M38 50 L42 58" stroke="#f0c14b" stroke-width="3" stroke-linecap="round"/>', '#1a1018'),
-    upgrade: svgIcon('<path d="M32 12 L40 28 H24 Z" fill="#7c6cf0"/><rect x="26" y="28" width="12" height="20" rx="2" fill="#a29bfe"/><path d="M20 52 H44" stroke="#f0c14b" stroke-width="3"/>', '#1a1830'),
-    plinko: svgIcon('<circle cx="20" cy="18" r="3" fill="#6c5ce7"/><circle cx="32" cy="18" r="3" fill="#6c5ce7"/><circle cx="44" cy="18" r="3" fill="#6c5ce7"/><circle cx="26" cy="30" r="3" fill="#6c5ce7"/><circle cx="38" cy="30" r="3" fill="#6c5ce7"/><circle cx="32" cy="42" r="5" fill="#f0c14b"/>', '#101828'),
-    pickaxe: svgIcon('<path d="M18 20 L32 28 L46 20" stroke="#c0c0c0" stroke-width="4" fill="none"/><rect x="30" y="28" width="4" height="24" fill="#8B6914"/>', '#2a2010')
+    roulette: frag('hangingstar'),
+    crash: frag('flyingbroom'),
+    upgrade: frag('tophat'),
+    plinko: frag('berrybox'),
+    pickaxe: frag('snowmittens')
   };
 
 
