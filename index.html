@@ -268,6 +268,21 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
 .mode-cs2 .cart.sel{background:linear-gradient(145deg,#1a2030,#0c1018)}
 .mode-cs2 .cart.vip{background:linear-gradient(145deg,#2a1810,#180c08)}
 
+  
+.ton-ico{width:16px;height:16px;border-radius:50%;background:#2ea7ff;display:inline-block;position:relative}
+.ton-ico:after{content:"";position:absolute;left:4px;top:3px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:9px solid #fff}
+.switch-row{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:#d7dbea}
+.sw{width:46px;height:26px;position:relative}
+.sw input{display:none}
+.sw i{position:absolute;inset:0;border-radius:99px;background:#2a3144;transition:.2s;box-shadow:inset 0 0 0 1px #3a4460}
+.sw i:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;left:3px;top:3px;background:#fff;transition:.2s}
+.sw input:checked+i{background:#2f7bff;box-shadow:0 0 12px #2f7bff}
+.sw input:checked+i:before{transform:translateX(20px)}
+.qty{display:flex;gap:8px;margin:8px 0 12px}
+.qty button{flex:1;height:38px;border-radius:12px;border:1px solid #2c3448;background:#171c28;color:#fff;font-weight:800}
+.qty button.on{background:#2f7bff;border-color:#7ecbff;box-shadow:0 0 12px #2f7bff}
+.rowline{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}
+
   </style>
 </head>
 <body>
@@ -284,7 +299,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
         <div class="av" id="avatar">?</div>
         <div>
           <div class="nm" id="username">...</div>
-          <div class="bal"><span class="st">TON</span> <b id="balanceTON">0</b></div>
+          <div class="bal"><span class="st ton-ico"></span> <b id="balanceTON">0</b></div>
         </div>
       </div>
       <div class="hdr-right">
@@ -366,9 +381,20 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
           <div><div class="cp-n" id="cpN"></div><div class="cp-d" id="cpD"></div></div>
         </div>
         <div class="cp-pr" id="cpPr"></div>
-        <div class="cp-lab">Possible drops</div>
+        <div class="switch-row"><span>Демо-режим</span><label class="sw"><input type="checkbox" id="demoMode"><i></i></label></div>
+        <div class="switch-row"><span>Быстрое открытие</span><label class="sw"><input type="checkbox" id="fastOpen"><i></i></label></div>
+        <div class="cp-lab">Сколько открыть?</div>
+        <div class="qty" id="qtyBox">
+          <button type="button" data-q="1" class="on">1</button>
+          <button type="button" data-q="2">2</button>
+          <button type="button" data-q="3">3</button>
+          <button type="button" data-q="4">4</button>
+          <button type="button" data-q="5">5</button>
+        </div>
+        <div class="cp-lab">Содержимое кейса</div>
         <div class="cp-list" id="cpList"></div>
-        <button type="button" class="btn" id="btnOpen" disabled>Open</button>
+        <button type="button" class="btn" id="btnOpen" disabled>Открыть</button>
+        <button type="button" class="btn-o" id="btnDemo">Демо крутка</button>
       </div>
     </div>
 
@@ -487,14 +513,17 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
     <div class="mod" id="modAdmin">
       <div class="mod-b tl">
         <button type="button" class="mx" id="btnAdminX">X</button>
-        <h3>Admin</h3>
+        <h3>Админ-панель</h3>
+        <p class="hint" id="admRole">Админ принимает заказ. Выдавать TON может только владелец.</p>
         <div class="fs" style="margin-top:12px">
+          <div class="rowline">Заказ на пополнение · новый <button type="button" class="btn-o" id="btnAccept">Принять</button></div>
           <label>Telegram ID</label>
-          <input type="number" id="admId" placeholder="5198310704" />
-          <label>TON (minus = take)</label>
-          <input type="number" id="admAmt" value="500" />
-          <button type="button" class="btn" id="btnAdmGive">Give / take</button>
-          <button type="button" class="btn-o" id="btnAdmFree">Reset free case</button>
+          <input type="number" id="admId" placeholder="ID игрока" />
+          <label>TON</label>
+          <input type="number" id="admAmt" value="1" step="0.1" />
+          <button type="button" class="btn" id="btnAdmGive">Выдать TON</button>
+          <button type="button" class="btn-o" id="btnAdmTake">Забрать TON</button>
+          <button type="button" class="btn-o" id="btnAdmFree">Сбросить бесплатный кейс</button>
           <div id="admRes" class="hint" style="margin-top:8px"></div>
         </div>
       </div>

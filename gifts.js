@@ -66,6 +66,7 @@
   };
 
   function giftIcon(name) {
+    if (typeof CHEAP !== 'undefined' && CHEAP[name]) return CHEAP[name];
     var g = G[name];
     if (g && g.img) return g.img;
     return starSvg();
@@ -77,6 +78,7 @@
   // Case cover images
   var CASE_IMG = {
     free: frag('bdaycandle'),
+    dust: frag('deskcalendar'),
     cheap: frag('toybear'),
     selected: frag('icecream'),
     vip: frag('plushpepe')
@@ -95,6 +97,13 @@
     pickaxe: svgIcon('<path d="M18 20 L32 28 L46 20" stroke="#c0c0c0" stroke-width="4" fill="none"/><rect x="30" y="28" width="4" height="24" fill="#8B6914"/>', '#2a2010')
   };
 
+
+  var CHEAP = {
+    'Мишка': svgIcon('<circle cx="32" cy="34" r="14" fill="#8d6a4a"/><circle cx="20" cy="18" r="7" fill="#8d6a4a"/><circle cx="44" cy="18" r="7" fill="#8d6a4a"/><circle cx="27" cy="32" r="2" fill="#111"/><circle cx="37" cy="32" r="2" fill="#111"/>', '#2a2118'),
+    'Сердце': svgIcon('<path d="M32 50 L14 30 C8 22 14 12 24 16 C28 18 32 24 32 24 C32 24 36 18 40 16 C50 12 56 22 50 30 Z" fill="#ff5c7a"/>', '#2a1520'),
+    'Крошка': svgIcon('<circle cx="32" cy="32" r="8" fill="#9aa4b8"/>', '#1c2230'),
+    'Наклейка': svgIcon('<rect x="16" y="18" width="32" height="28" rx="6" fill="#f0c14b"/>', '#2a2410')
+  };
   w.GIFTS = G;
   w.giftIcon = giftIcon;
   w.giftInfo = giftInfo;
