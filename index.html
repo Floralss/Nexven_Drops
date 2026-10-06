@@ -10,10 +10,11 @@
 <body>
   <main class="app">
     <header class="top">
-      <img class="avatar" src="img/logo.jpg" alt="" />
+      <img class="avatar" id="ava" alt="" />
+      <div><div class="nm" id="nick">Игрок</div><div class="muted" id="role">Nexven Drops</div></div>
       <div class="spacer"></div>
-      <button class="dep" onclick="openPay()">+ Пополнить</button>
-      <div class="bal"><img src="img/ton.svg" alt="" /><span id="bal">0.03</span></div>
+      <button class="dep" id="payBtn">+ Пополнить</button>
+      <div class="bal"><img src="img/ton.svg" width="16" alt="" /><span id="bal">0.03</span></div>
     </header>
     <section id="home" class="view on"></section>
     <section id="cases" class="view"></section>
@@ -21,13 +22,13 @@
     <section id="top" class="view"></section>
     <section id="profile" class="view"></section>
   </main>
-  <nav class="dock">
-    <button class="on" onclick="tab('home', this)">Игры</button>
-    <button onclick="tab('cases', this)">Кейсы</button>
-    <button onclick="tab('top', this)">Топ</button>
-    <button onclick="tab('profile', this)">Профиль</button>
+  <nav class="dock" id="dock">
+    <button class="on" data-tab="home">Игры</button>
+    <button data-tab="cases">Кейсы</button>
+    <button data-tab="top">Топ</button>
+    <button data-tab="profile">Профиль</button>
   </nav>
-  <div class="sheet" id="sheet" onclick="if(event.target.id==='sheet')closePay()"><div class="modal" id="modal"></div></div>
+  <div class="sheet" id="sheet"><div class="modal" id="modal"></div></div>
   <script src="app.js"></script>
 </body>
 </html>
