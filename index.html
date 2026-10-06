@@ -4,50 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nexven Drops</title>
-  <link rel="icon" href="icons/logo.jpg" />
-  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="style.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <main class="app">
     <header class="top">
-      <img class="avatar" src="icons/logo.jpg" alt="" />
-      <div><b>Nexven Drops</b><div class="muted" id="who">игрок</div></div>
+      <img class="avatar" src="img/logo.jpg" alt="" />
       <div class="spacer"></div>
-      <button class="deposit" onclick="openSheet()">+ Пополнить</button>
-      <div class="balance"><img src="icons/ton.svg" alt="" /><span data-bal>0</span></div>
+      <button class="dep" onclick="openPay()">+ Пополнить</button>
+      <div class="bal"><img src="img/ton.svg" alt="" /><span id="bal">0.03</span></div>
     </header>
-    <section id="cases" class="cases"></section>
-    <section id="live" class="live hidden"><h2>Лента</h2><div id="feed"></div><h2>Лидерборд</h2><div id="board"></div></section>
-    <section id="admin" class="live hidden">
-      <h2>Админ-панель</h2>
-      <p class="muted">Админ принимает заказ. Выдавать TON и кейсы может только владелец.</p>
-      <div id="orders"></div>
-      <div id="ownerBox">
-        <input id="target" placeholder="ID игрока" />
-        <input id="amount" placeholder="Сумма TON" />
-        <input id="itemName" placeholder="Название" />
-        <button class="open" onclick="adminAct('give_ton')">Выдать TON</button>
-        <button class="open" onclick="adminAct('take_ton')">Забрать TON</button>
-        <button class="open" onclick="adminAct('give_item')">Выдать кейс</button>
-        <button class="demo" onclick="adminAct('clear_items')">Забрать предметы</button>
-      </div>
-    </section>
+    <section id="home" class="view on"></section>
+    <section id="cases" class="view"></section>
+    <section id="game" class="view"></section>
+    <section id="top" class="view"></section>
+    <section id="profile" class="view"></section>
   </main>
   <nav class="dock">
-    <button class="on" onclick="tab('cases', this)">Кейсы</button>
-    <button onclick="tab('live', this)">Лента</button>
-    <button onclick="tab('admin', this)">Админ</button>
+    <button class="on" onclick="tab('home', this)">Игры</button>
+    <button onclick="tab('cases', this)">Кейсы</button>
+    <button onclick="tab('top', this)">Топ</button>
+    <button onclick="tab('profile', this)">Профиль</button>
   </nav>
-  <div class="sheet" id="sheet" onclick="if (event.target.id === 'sheet') closeSheet()">
-    <div class="modal">
-      <div class="head"><h2>Заказ</h2><button class="x" onclick="closeSheet()">×</button></div>
-      <p class="note">Заказ виден в админ-панели. Принятие само ничего не выдаёт.</p>
-      <input id="orderText" placeholder="Сколько TON нужно" />
-      <button class="go" onclick="makeOrder()">Отправить</button>
-    </div>
-  </div>
-  <div class="win" id="win"><div class="card"><img id="winImg" alt="" /><h2 id="winName"></h2><p id="winPrice"></p><button class="go" onclick="closeWin()">Ок</button></div></div>
-  <script src="js/app.js"></script>
+  <div class="sheet" id="sheet" onclick="if(event.target.id==='sheet')closePay()"><div class="modal" id="modal"></div></div>
+  <script src="app.js"></script>
 </body>
 </html>
