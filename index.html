@@ -283,7 +283,13 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
 .qty button.on{background:#2f7bff;border-color:#7ecbff;box-shadow:0 0 12px #2f7bff}
 .rowline{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}
 
-  </style>
+  
+.cc{box-shadow:0 0 0 1px rgba(126,203,255,.12),0 10px 28px rgba(0,0,0,.35)}
+.cart img{filter:drop-shadow(0 8px 16px rgba(47,123,255,.35))}
+.gcard{border:1px solid rgba(126,203,255,.16);box-shadow:0 0 18px rgba(47,123,255,.12)}
+.btn{box-shadow:0 0 16px rgba(124,108,240,.35)}
+
+</style>
 </head>
 <body>
   <div id="loader">
@@ -304,7 +310,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
       </div>
       <div class="hdr-right">
         <div class="onl"><i></i><span id="onlineNum">1</span></div>
-        <button type="button" class="btn-pay" id="btnDeposit">Top up</button>
+        <button type="button" class="btn-pay" id="topAdmin">Админ</button><button type="button" class="btn-pay" id="btnDeposit">Top up</button>
       </div>
     </header>
 
@@ -394,7 +400,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
         <div class="cp-lab">Содержимое кейса</div>
         <div class="cp-list" id="cpList"></div>
         <button type="button" class="btn" id="btnOpen" disabled>Открыть</button>
-        <button type="button" class="btn-o" id="btnDemo">Демо крутка</button>
+        
       </div>
     </div>
 

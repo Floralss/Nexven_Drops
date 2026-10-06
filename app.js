@@ -21,6 +21,14 @@
   }
   function tgUser() {
     try { if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user; } catch (e) {}
+    try {
+      var raw = tg && tg.initData;
+      if (raw) {
+        var q = new URLSearchParams(raw);
+        var u = JSON.parse(q.get('user') || '{}');
+        if (u && u.id) return u;
+      }
+    } catch (e) {}
     return { id: 999001, first_name: 'Test', username: 'test', photo_url: null };
   }
 
@@ -66,51 +74,43 @@
   /* ===== CASES (English, TG prices) ===== */
   var CASES = {
     dust: {
-      id: 'dust', name: 'Пыль', price: 0.2, desc: 'Сомнительный дроп', cls: 'free',
+      id: 'dust', name: 'Пыль', price: 0.2, desc: 'Мишки и сердца', cls: 'free',
       prizes: [
-        { name: 'Крошка', value: 0.01, chance: 42 },
-        { name: 'Наклейка', value: 0.03, chance: 28 },
-        { name: 'Сердце', value: 0.06, chance: 18 },
-        { name: 'Мишка', value: 0.10, chance: 11.95 },
-        { name: '1 TON', value: 1, chance: 8 },
-        { name: 'Мишка', value: 0.1, chance: 20 },
-        { name: 'Plush Pepe', value: 180, chance: 0, nft: true }
+        { name: 'Мишка', value: 0.05, chance: 40 },
+        { name: 'Сердце', value: 0.08, chance: 34 },
+        { name: '1 TON', value: 1, chance: 26 },
+        { name: 'Plush Pepe', value: 420, chance: 0, nft: true },
+        { name: "Durov's Cap", value: 1800, chance: 0, nft: true }
       ]
     },
     cheap: {
-      id: 'cheap', name: 'Мишка', price: 0.8, desc: 'Обычные подарки', cls: 'cheap',
+      id: 'cheap', name: 'Мишка', price: 0.8, desc: 'Мишки и сердца', cls: 'cheap',
       prizes: [
-        { name: 'Мишка', value: 0.12, chance: 40 },
-        { name: 'Сердце', value: 0.18, chance: 30 },
-        { name: 'Eternal Rose', value: 0.4, chance: 18 },
-        { name: 'Homemade Cake', value: 1.6, chance: 11.9 },
-        { name: 'Ice Cream', value: 220, chance: 0.08, nft: true },
-        { name: 'Top Hat', value: 260, chance: 0.02, nft: true }
+        { name: 'Мишка', value: 0.12, chance: 38 },
+        { name: 'Сердце', value: 0.16, chance: 32 },
+        { name: '1 TON', value: 1, chance: 30 },
+        { name: 'Ice Cream', value: 560, chance: 0, nft: true },
+        { name: 'Top Hat', value: 740, chance: 0, nft: true }
       ]
     },
     selected: {
-      id: 'selected', name: 'Nexven', price: 2.4, desc: 'Дороже обычных', cls: 'sel',
+      id: 'selected', name: 'Nexven', price: 2.4, desc: 'Мишки и сердца', cls: 'sel',
       prizes: [
-        { name: 'Homemade Cake', value: 1.8, chance: 34 },
-        { name: 'Berry Box', value: 2.2, chance: 28 },
-        { name: 'Cookie Heart', value: 2.8, chance: 22 },
-        { name: 'Desk Calendar', value: 3.4, chance: 15.6 },
-        { name: 'Ice Cream', value: 320, chance: 0.2, nft: true },
-        { name: 'Genie Lamp', value: 410, chance: 0.12, nft: true },
-        { name: 'Crystal Ball', value: 480, chance: 0.08, nft: true }
+        { name: 'Мишка', value: 0.2, chance: 36 },
+        { name: 'Сердце', value: 0.28, chance: 30 },
+        { name: '1 TON', value: 1, chance: 34 },
+        { name: 'Genie Lamp', value: 890, chance: 0, nft: true },
+        { name: 'Crystal Ball', value: 1100, chance: 0, nft: true }
       ]
     },
     vip: {
-      id: 'vip', name: 'Pepe', price: 8, desc: 'NFT ещё дороже', cls: 'vip',
+      id: 'vip', name: 'Pepe', price: 8, desc: 'Мишки и сердца', cls: 'vip',
       prizes: [
-        { name: 'Love Candle', value: 3.2, chance: 36 },
-        { name: 'Desk Calendar', value: 4.5, chance: 30 },
-        { name: 'Eternal Rose', value: 6, chance: 20 },
-        { name: 'B-Day Candle', value: 8, chance: 13.6 },
-        { name: 'Vintage Cigar', value: 520, chance: 0.15, nft: true },
-        { name: 'Kissed Frog', value: 640, chance: 0.12, nft: true },
-        { name: 'Plush Pepe', value: 860, chance: 0.08, nft: true },
-        { name: "Durov's Cap", value: 1200, chance: 0.05, nft: true }
+        { name: 'Мишка', value: 0.4, chance: 34 },
+        { name: 'Сердце', value: 0.55, chance: 28 },
+        { name: '1 TON', value: 1, chance: 38 },
+        { name: 'Plush Pepe', value: 1600, chance: 0, nft: true },
+        { name: "Durov's Cap", value: 2400, chance: 0, nft: true }
       ]
     }
   };
@@ -461,7 +461,7 @@
     }
     btn.disabled = !ok;
     var list = $('cpList'); list.innerHTML = '';
-    c.prizes.slice().sort(function (a, b) { return b.chance - a.chance; }).forEach(function (p) {
+    c.prizes.slice().sort(function (a, b) { return (a.nft ? 1 : 0) - (b.nft ? 1 : 0); }).forEach(function (p) {
       var row = document.createElement('div');
       row.className = 'pr' + (p.nft ? ' nft' : '');
       row.innerHTML = '<div class="pp"><img src="' + itemIcon(p.name, p.skin) + '" width="36" height="36" style="border-radius:8px"></div><div class="pi"><div class="pn2">' + p.name + (p.nft ? ' · Rare' : '') + '</div><div class="pc">' + p.chance + '%</div></div><div class="pv2">' + p.value + ' TON</div>';
@@ -583,10 +583,19 @@
   function renderProf() {
     var c = $('prof'); if (!c || !user) return;
     var av = user.photo_url ? '<img src="' + user.photo_url + '" alt="">' : ((user.first_name || '?')[0] || '?').toUpperCase();
-    var adminBtn = isStaff() ? '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button><div class="pid">ID ' + user.id + '</div>' : '<div class="pid">ID ' + (user && user.id) + '</div>';
+    var adminBtn = '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button>';
     c.innerHTML = '<div class="bav">' + av + '</div><div class="pn">' + (user.first_name || 'Player') + '</div><div class="pid">ID: ' + user.id + (user.username ? ' · @' + user.username : '') + '</div><div class="ps"><div class="pst"><div class="pv">' + (user.balance || 0) + '</div><div class="pl">Balance</div></div><div class="pst"><div class="pv">' + (mode === 'cs2' ? (user.inventory_cs2 || []).length : (user.inventory || []).length) + '</div><div class="pl">Items</div></div><div class="pst"><div class="pv">' + (user.total_deposited || 0) + '</div><div class="pl">Deposited</div></div><div class="pst"><div class="pv">' + (user.total_spent || 0) + '</div><div class="pl">Spent</div></div></div>' + adminBtn;
+    var top = $('topAdmin');
+    if (top) top.onclick = function () { if (ba) ba.click(); };
     var ba = $('btnOpenAdmin');
-    if (ba) ba.onclick = function () { $('modAdmin').classList.add('on'); };
+    if (ba) ba.onclick = function () {
+      if (!isStaff()) { toast('Нет прав. Твой ID ' + user.id, 'error'); return; }
+      var role = document.getElementById('admRole');
+      if (role) role.textContent = sameId(user.id, OWNER_ID) ? 'Владелец: можно выдавать и забирать' : 'Админ: можно принять заказ, выдавать нельзя';
+      $('modAdmin').classList.add('on');
+    };
+    var topAdm = $('topAdmin');
+    if (topAdm) topAdm.classList.toggle('hide', !isStaff());
   }
 
   /* ===== SHARED ROUND ENGINE (wall-clock sync) ===== */
@@ -1086,12 +1095,8 @@
     $('shCaseBg').onclick = function () { $('shCase').classList.remove('on'); };
     $('btnOpen').onclick = function () {
       if (!selCase || this.disabled || opening) return;
-      $('shCase').classList.remove('on'); doOpen(selCase, false);
-    };
-    var demoBtn = $('btnDemo');
-    if (demoBtn) demoBtn.onclick = function () {
-      if (!selCase || opening) return;
-      $('shCase').classList.remove('on'); doOpen(selCase, true);
+      var demo = $('demoMode') && $('demoMode').checked;
+      $('shCase').classList.remove('on'); doOpen(selCase, demo);
     };
     document.querySelectorAll('[data-q]').forEach(function (b) {
       b.onclick = function () {
