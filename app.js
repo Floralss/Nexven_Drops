@@ -73,14 +73,24 @@
 
   /* ===== CASES (English, TG prices) ===== */
   var CASES = {
+    free: {
+      id: 'free', name: 'Daily', price: 0, desc: 'Раз в 24 часа', cls: 'free',
+      prizes: [
+        { name: 'Мишка', value: 0.05, chance: 46 },
+        { name: 'Сердце', value: 0.08, chance: 34 },
+        { name: '1 TON', value: 1, chance: 20 },
+        { name: 'Plush Pepe', value: 900, chance: 0.001, nft: true },
+        { name: "Durov's Cap", value: 2200, chance: 0.001, nft: true }
+      ]
+    },
     dust: {
       id: 'dust', name: 'Пыль', price: 0.2, desc: 'Мишки и сердца', cls: 'free',
       prizes: [
         { name: 'Мишка', value: 0.05, chance: 40 },
         { name: 'Сердце', value: 0.08, chance: 34 },
         { name: '1 TON', value: 1, chance: 26 },
-        { name: 'Plush Pepe', value: 420, chance: 0, nft: true },
-        { name: "Durov's Cap", value: 1800, chance: 0, nft: true }
+        { name: 'Plush Pepe', value: 420, chance: 0.001, nft: true },
+        { name: "Durov's Cap", value: 1800, chance: 0.001, nft: true }
       ]
     },
     cheap: {
@@ -89,8 +99,8 @@
         { name: 'Мишка', value: 0.12, chance: 38 },
         { name: 'Сердце', value: 0.16, chance: 32 },
         { name: '1 TON', value: 1, chance: 30 },
-        { name: 'Ice Cream', value: 560, chance: 0, nft: true },
-        { name: 'Top Hat', value: 740, chance: 0, nft: true }
+        { name: 'Ice Cream', value: 560, chance: 0.001, nft: true },
+        { name: 'Top Hat', value: 740, chance: 0.001, nft: true }
       ]
     },
     selected: {
@@ -99,8 +109,8 @@
         { name: 'Мишка', value: 0.2, chance: 36 },
         { name: 'Сердце', value: 0.28, chance: 30 },
         { name: '1 TON', value: 1, chance: 34 },
-        { name: 'Genie Lamp', value: 890, chance: 0, nft: true },
-        { name: 'Crystal Ball', value: 1100, chance: 0, nft: true }
+        { name: 'Genie Lamp', value: 890, chance: 0.001, nft: true },
+        { name: 'Crystal Ball', value: 1100, chance: 0.001, nft: true }
       ]
     },
     vip: {
@@ -109,8 +119,8 @@
         { name: 'Мишка', value: 0.4, chance: 34 },
         { name: 'Сердце', value: 0.55, chance: 28 },
         { name: '1 TON', value: 1, chance: 38 },
-        { name: 'Plush Pepe', value: 1600, chance: 0, nft: true },
-        { name: "Durov's Cap", value: 2400, chance: 0, nft: true }
+        { name: 'Plush Pepe', value: 1600, chance: 0.001, nft: true },
+        { name: "Durov's Cap", value: 2400, chance: 0.001, nft: true }
       ]
     }
   };
@@ -456,7 +466,9 @@
     } else {
       pr.className = 'cp-pr'; pr.textContent = c.price + ' TON';
       var q = window.caseQty || 1;
-      if ((user.balance || 0) < c.price * q) { ok = false; btn.textContent = 'Не хватает TON'; }
+      var demo = $('demoMode') && $('demoMode').checked;
+      if (demo) btn.textContent = 'Открыть демо';
+      else if ((user.balance || 0) < c.price * q) { ok = false; btn.textContent = 'Не хватает TON'; }
       else btn.textContent = 'Открыть x' + q + ' · ' + (c.price * q) + ' TON';
     }
     btn.disabled = !ok;
@@ -476,8 +488,8 @@
     var c = activeCases()[id]; if (!c) return;
     if (id === 'free') {
       if (Date.now() < (user.last_free || 0) + 86400000) { toast('Free not ready', 'error'); return; }
-    } else {
-      var count = demo ? 1 : (window.caseQty || 1);
+    } else if (!demo) {
+      var count = window.caseQty || 1;
       var cost = c.price * count;
       if ((user.balance || 0) < cost) { toast('Not enough TON', 'error'); return; }
       user.balance -= cost;
@@ -1098,6 +1110,11 @@
       var demo = $('demoMode') && $('demoMode').checked;
       $('shCase').classList.remove('on'); doOpen(selCase, demo);
     };
+    var demoBox = $('demoMode');
+    if (demoBox && !demoBox._bound) {
+      demoBox._bound = true;
+      demoBox.addEventListener('change', function () { if (selCase) openPrev(selCase); });
+    }
     document.querySelectorAll('[data-q]').forEach(function (b) {
       b.onclick = function () {
         window.caseQty = Number(b.getAttribute('data-q')) || 1;
