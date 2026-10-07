@@ -422,3 +422,17 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 .refbox{margin-top:12px;padding:16px;border-radius:24px;background:linear-gradient(135deg,rgba(43,227,160,.12),rgba(47,123,255,.1));border:1px solid rgba(43,227,160,.25)}
 .refbox .lnk{margin:8px 0 12px;padding:10px 12px;border-radius:13px;background:rgba(0,0,0,.28);font-size:12px;color:#b7f5dd;word-break:break-all;font-weight:600}
 .rrow{display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;padding:6px 0;border-top:1px solid var(--line)}
+
+/* ---------- online + shared leaderboard ---------- */
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(43,227,160,.6);animation:ping 1.8s ease-out infinite;flex:none}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(43,227,160,.55)}80%,100%{box-shadow:0 0 0 9px rgba(43,227,160,0)}}
+.lb-online{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;color:#cfe8dd;margin:0 2px 12px;height:40px;padding:0 16px;border-radius:999px;background:rgba(43,227,160,.09);border:1px solid rgba(43,227,160,.24);width:fit-content;min-width:130px}
+.lb-online b{color:var(--green);font-size:15px}
+.lb-online .tot{margin-left:10px;color:var(--m);font-weight:600;font-size:12.5px}
+.lb-online.sm{height:34px;font-size:13px;margin-bottom:12px}
+.lav{position:relative;overflow:visible}
+.lav img{border-radius:50%}
+.lav.on::after{content:'';position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:var(--green);border:2.5px solid var(--card);box-shadow:0 0 8px rgba(43,227,160,.8)}
+.lname small .onl{color:var(--green);font-weight:700}
+.skel{height:72px;border-radius:20px;margin-bottom:9px;background:linear-gradient(100deg,#161922 30%,#1f2430 50%,#161922 70%);background-size:200% 100%;animation:skl 1.2s linear infinite}
+@keyframes skl{from{background-position:200% 0}to{background-position:-200% 0}}

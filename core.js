@@ -165,7 +165,7 @@
   };
   var saveT = null;
   NX.save = function (now) {
-    saveLocal(); touchLb();
+    saveLocal(); touchLb(); if (NX.net) NX.net.push();
     if (now) { NX.cloudSave(); return; }
     clearTimeout(saveT); saveT = setTimeout(NX.cloudSave, 600);
   };

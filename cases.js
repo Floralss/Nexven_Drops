@@ -29,15 +29,15 @@
   };
   NX.CASES = CASES;
 
-  /* same selection rule as before: NFT prizes with chance < 0.05 are not in the draw pool */
+  /* every prize drops at exactly its listed chance; NFTs are listed at a tiny chance, so they are very rare */
   function roll(prizes) {
-    var pool = prizes.filter(function (p) { return p.chance > 0 && (!p.nft || p.chance >= 0.05); });
-    if (!pool.length) pool = prizes.filter(function (p) { return !p.nft; });
+    var pool = prizes.filter(function (p) { return p.chance > 0; });
     var t = 0, i; for (i = 0; i < pool.length; i++) t += pool[i].chance;
     var r = NX.rand() * t;
     for (i = 0; i < pool.length; i++) { r -= pool[i].chance; if (r <= 0) return pool[i]; }
     return pool[pool.length - 1];
   }
+  NX.roll = roll;
   function isTonPrize(p) { return /^\d+(\.\d+)? TON$/.test(p.name) && !p.nft; }
 
   function art(id) { return ART.caseArt(id, window.giftImg(window.CASE_GIFT[id], '')); }

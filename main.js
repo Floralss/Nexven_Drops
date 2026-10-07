@@ -69,7 +69,7 @@
       order.forEach(function (n) { var s = document.createElement('section'); s.className = 'view'; s.id = 'v-' + n; main.appendChild(s); });
       order.forEach(function (n) { if (NX.pages[n].build) NX.pages[n].build(); });
       NX.renderAvatar(); NX.renderUser(true); NX.bindModals();
-      NX.settleDue(); NX.save(true);
+      NX.settleDue(); NX.save(true); if (NX.net) NX.net.start();
       $('nav').onclick = function (e) { var b = e.target.closest('.nb'); if (!b) return; NX.sfx('tab'); NX.haptic('light'); var t = b.getAttribute('data-t'); NX.go(t, { force: NX.cur() !== t }); };
       $('btnAvatar').onclick = function () { NX.sfx('click'); NX.go('profile'); };
       document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { NX.sfx('click'); NX.back(); } });
