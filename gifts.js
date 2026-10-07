@@ -1,112 +1,104 @@
-/* Real Telegram gift images via Fragment CDN + changes.tg API */
+/* Nexven Drop — gifts catalogue + image helpers */
 (function (w) {
-  function frag(slug) {
-    return 'https://fragment.com/file/gifts/' + slug + '/thumb.webp';
-  }
-  function apiPng(slug) {
-    return 'https://api.changes.tg/original/' + slug + '.png?size=128';
-  }
-  function starSvg() {
-    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2a2410"/><path d="M32 10 L38 24 L54 26 L42 36 L46 52 L32 44 L18 52 L22 36 L10 26 L26 24 Z" fill="#f0c14b"/></svg>';
-    return 'data:image/svg+xml,' + encodeURIComponent(s);
-  }
+  function frag(slug) { return 'https://fragment.com/file/gifts/' + slug + '/thumb.webp'; }
+  function big(slug) { return 'https://api.changes.tg/original/' + slug + '.png?size=512'; }
+  function enc(s) { return 'data:image/svg+xml,' + encodeURIComponent(s); }
 
-  // slug = fragment folder name (lowercase, no spaces/apostrophe)
+  /* hand-drawn icons for simple items */
+  var SVG = {
+    ton: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd0ff"/><stop offset="1" stop-color="#1768f0"/></linearGradient></defs><circle cx="48" cy="48" r="40" fill="#0b1b3a"/><circle cx="48" cy="48" r="40" fill="none" stroke="url(#a)" stroke-width="4"/><path d="M27 29h42c2.6 0 4.2 2.8 2.9 5L51.3 69c-1.4 2.4-4.9 2.4-6.3 0L24.1 34c-1.3-2.2.3-5 2.9-5z" fill="url(#a)"/><path d="M48 33v34" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="M33 33h30" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round"/></svg>',
+    bear: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><radialGradient id="a" cx=".4" cy=".35"><stop offset="0" stop-color="#d9a97a"/><stop offset="1" stop-color="#9a6a42"/></radialGradient></defs><circle cx="24" cy="24" r="12" fill="url(#a)"/><circle cx="72" cy="24" r="12" fill="url(#a)"/><circle cx="24" cy="24" r="6" fill="#e9c6a0"/><circle cx="72" cy="24" r="6" fill="#e9c6a0"/><circle cx="48" cy="52" r="30" fill="url(#a)"/><ellipse cx="48" cy="62" rx="14" ry="11" fill="#ecd0ac"/><circle cx="37" cy="46" r="4" fill="#2a1a10"/><circle cx="59" cy="46" r="4" fill="#2a1a10"/><circle cx="38.2" cy="44.8" r="1.3" fill="#fff"/><circle cx="60.2" cy="44.8" r="1.3" fill="#fff"/><ellipse cx="48" cy="57" rx="5" ry="3.6" fill="#2a1a10"/><path d="M48 60.5v4M43 66c2 2 8 2 10 0" stroke="#2a1a10" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+    heart: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a9c"/><stop offset="1" stop-color="#d11a4a"/></linearGradient></defs><path d="M48 84C20 62 10 46 10 32 10 20 19 12 30 12c8 0 14 4 18 11 4-7 10-11 18-11 11 0 20 8 20 20 0 14-10 30-38 52z" fill="url(#a)"/><path d="M24 30c0-6 4-10 10-10" stroke="#fff" stroke-opacity=".6" stroke-width="5" fill="none" stroke-linecap="round"/></svg>',
+    crumb: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><radialGradient id="a" cx=".4" cy=".35"><stop offset="0" stop-color="#dfe6f5"/><stop offset="1" stop-color="#7b88a6"/></radialGradient></defs><path d="M20 58c-6-14 6-30 22-30 8 0 10-6 18-4 12 3 22 16 18 30-3 12-14 20-28 20-14 0-26-4-30-16z" fill="url(#a)"/><circle cx="40" cy="48" r="3" fill="#5b6785"/><circle cx="58" cy="56" r="2.5" fill="#5b6785"/><circle cx="50" cy="40" r="2" fill="#5b6785"/></svg>',
+    sticker: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#f0a21c"/></linearGradient></defs><path d="M16 16h50l14 14v50H16z" fill="url(#a)"/><path d="M66 16v14h14z" fill="#fff" fill-opacity=".55"/><path d="M48 32l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z" fill="#fff" fill-opacity=".92"/></svg>'
+  };
+  function ico(k) { return enc(SVG[k]); }
+
   var G = {
-    // TON (currency)
-    '1 TON':  { value: 1,   nft: false, img: starSvg() },
-    '2 TON': { value: 2,   nft: false, img: starSvg() },
-    '5 TON': { value: 5,   nft: false, img: starSvg() },
+    '1 TON':  { value: 1, nft: false, img: ico('ton'), local: true },
+    '2 TON':  { value: 2, nft: false, img: ico('ton'), local: true },
+    '5 TON':  { value: 5, nft: false, img: ico('ton'), local: true },
+    'Мишка':   { value: 0.1,  nft: false, img: ico('bear'), local: true },
+    'Сердце':  { value: 0.08, nft: false, img: ico('heart'), local: true },
+    'Крошка':  { value: 0.05, nft: false, img: ico('crumb'), local: true },
+    'Наклейка':{ value: 0.05, nft: false, img: ico('sticker'), local: true },
 
-    // Classic-priced + real collectible thumbs
-    'Toy Bear':       { value: 15,  nft: false, img: frag('toybear'), slug: 'toybear' },
-    'Eternal Rose':   { value: 25,  nft: false, img: frag('eternalrose'), slug: 'eternalrose' },
-    'Homemade Cake':  { value: 50,  nft: false, img: frag('homemadecake'), slug: 'homemadecake' },
-    'Berry Box':      { value: 50,  nft: false, img: frag('berrybox'), slug: 'berrybox' },
-    'Cookie Heart':   { value: 50,  nft: false, img: frag('cookieheart'), slug: 'cookieheart' },
-    'B-Day Candle':   { value: 50,  nft: false, img: frag('bdaycandle'), slug: 'bdaycandle' },
-    'Love Candle':    { value: 50,  nft: false, img: frag('lovecandle'), slug: 'lovecandle' },
-    'Desk Calendar':  { value: 50,  nft: false, img: frag('deskcalendar'), slug: 'deskcalendar' },
+    'Toy Bear':       { value: 15,  nft: false, slug: 'toybear' },
+    'Eternal Rose':   { value: 25,  nft: false, slug: 'eternalrose' },
+    'Homemade Cake':  { value: 50,  nft: false, slug: 'homemadecake' },
+    'Berry Box':      { value: 50,  nft: false, slug: 'berrybox' },
+    'Cookie Heart':   { value: 50,  nft: false, slug: 'cookieheart' },
+    'B-Day Candle':   { value: 50,  nft: false, slug: 'bdaycandle' },
+    'Love Candle':    { value: 50,  nft: false, slug: 'lovecandle' },
+    'Desk Calendar':  { value: 50,  nft: false, slug: 'deskcalendar' },
+    'Candy Cane':     { value: 500, nft: true,  slug: 'candycane' },
 
-    // Market-style NFTs (real TG collections)
-    'Ice Cream':      { value: 505, nft: true, img: frag('icecream'), slug: 'icecream' },
-    'Top Hat':        { value: 530, nft: true, img: frag('tophat'), slug: 'tophat' },
-    'Hypno Lollipop': { value: 544, nft: true, img: frag('hypnolollipop'), slug: 'hypnolollipop' },
-    'Lunar Snake':    { value: 549, nft: true, img: frag('lunarsnake'), slug: 'lunarsnake' },
-    'Jester Hat':     { value: 550, nft: true, img: frag('jesterhat'), slug: 'jesterhat' },
-    'Party Sparkler': { value: 587, nft: true, img: frag('partysparkler'), slug: 'partysparkler' },
-    'Snow Mittens':   { value: 500, nft: true, img: frag('snowmittens'), slug: 'snowmittens' },
-    'Jack-in-the-Box':{ value: 500, nft: true, img: frag('jackinthebox'), slug: 'jackinthebox' },
-    'Spy Agaric':     { value: 814, nft: true, img: frag('spyagaric'), slug: 'spyagaric' },
-    'Kissed Frog':    { value: 721, nft: true, img: frag('kissedfrog'), slug: 'kissedfrog' },
-    'Jelly Bunny':    { value: 721, nft: true, img: frag('jellybunny'), slug: 'jellybunny' },
-    'Trapped Heart':  { value: 690, nft: true, img: frag('trappedheart'), slug: 'trappedheart' },
-    'Scared Cat':     { value: 721, nft: true, img: frag('scaredcat'), slug: 'scaredcat' },
-    'Magic Potion':   { value: 600, nft: true, img: frag('magicpotion'), slug: 'magicpotion' },
-    'Genie Lamp':     { value: 650, nft: true, img: frag('genielamp'), slug: 'genielamp' },
-    'Voodoo Doll':    { value: 655, nft: true, img: frag('voodoodoll'), slug: 'voodoodoll' },
-    'Crystal Ball':   { value: 666, nft: true, img: frag('crystalball'), slug: 'crystalball' },
-    'Flying Broom':   { value: 650, nft: true, img: frag('flyingbroom'), slug: 'flyingbroom' },
-    'Witch Hat':      { value: 550, nft: true, img: frag('witchhat'), slug: 'witchhat' },
-    'Santa Hat':      { value: 500, nft: true, img: frag('santahat'), slug: 'santahat' },
-    'Precious Peach': { value: 900, nft: true, img: frag('preciouspeach'), slug: 'preciouspeach' },
-    'Plush Pepe':     { value: 900, nft: true, img: frag('plushpepe'), slug: 'plushpepe' },
-    "Durov's Cap":    { value: 1000,nft: true, img: frag('durovscap'), slug: 'durovscap' },
-    'Perfume Bottle': { value: 710, nft: true, img: frag('perfumebottle'), slug: 'perfumebottle' },
-    'Vintage Cigar':  { value: 700, nft: true, img: frag('vintagecigar'), slug: 'vintagecigar' },
-    'Skull Flower':   { value: 600, nft: true, img: frag('skullflower'), slug: 'skullflower' },
-    'Evil Eye':       { value: 550, nft: true, img: frag('evileye'), slug: 'evileye' },
-    'Hex Pot':        { value: 550, nft: true, img: frag('hexpot'), slug: 'hexpot' },
-    'Sharp Tongue':   { value: 600, nft: true, img: frag('sharptongue'), slug: 'sharptongue' },
-    'Signet Ring':    { value: 700, nft: true, img: frag('signetring'), slug: 'signetring' },
-    'Spiced Wine':    { value: 500, nft: true, img: frag('spicedwine'), slug: 'spicedwine' },
-    'Bunny Muffin':   { value: 510, nft: true, img: frag('bunnymuffin'), slug: 'bunnymuffin' },
-    'Astral Shard':   { value: 800, nft: true, img: frag('astralshard'), slug: 'astralshard' },
-    'Hanging TON':   { value: 505, nft: true, img: frag('hangingstar'), slug: 'hangingstar' }
+    'Ice Cream':      { value: 505, nft: true, slug: 'icecream' },
+    'Top Hat':        { value: 530, nft: true, slug: 'tophat' },
+    'Hypno Lollipop': { value: 544, nft: true, slug: 'hypnolollipop' },
+    'Lunar Snake':    { value: 549, nft: true, slug: 'lunarsnake' },
+    'Jester Hat':     { value: 550, nft: true, slug: 'jesterhat' },
+    'Party Sparkler': { value: 587, nft: true, slug: 'partysparkler' },
+    'Snow Mittens':   { value: 500, nft: true, slug: 'snowmittens' },
+    'Jack-in-the-Box':{ value: 500, nft: true, slug: 'jackinthebox' },
+    'Spy Agaric':     { value: 814, nft: true, slug: 'spyagaric' },
+    'Kissed Frog':    { value: 721, nft: true, slug: 'kissedfrog' },
+    'Jelly Bunny':    { value: 721, nft: true, slug: 'jellybunny' },
+    'Trapped Heart':  { value: 690, nft: true, slug: 'trappedheart' },
+    'Scared Cat':     { value: 721, nft: true, slug: 'scaredcat' },
+    'Magic Potion':   { value: 600, nft: true, slug: 'magicpotion' },
+    'Genie Lamp':     { value: 650, nft: true, slug: 'genielamp' },
+    'Voodoo Doll':    { value: 655, nft: true, slug: 'voodoodoll' },
+    'Crystal Ball':   { value: 666, nft: true, slug: 'crystalball' },
+    'Flying Broom':   { value: 650, nft: true, slug: 'flyingbroom' },
+    'Witch Hat':      { value: 550, nft: true, slug: 'witchhat' },
+    'Santa Hat':      { value: 500, nft: true, slug: 'santahat' },
+    'Precious Peach': { value: 900, nft: true, slug: 'preciouspeach' },
+    'Plush Pepe':     { value: 900, nft: true, slug: 'plushpepe' },
+    "Durov's Cap":    { value: 1000,nft: true, slug: 'durovscap' },
+    'Perfume Bottle': { value: 710, nft: true, slug: 'perfumebottle' },
+    'Vintage Cigar':  { value: 700, nft: true, slug: 'vintagecigar' },
+    'Skull Flower':   { value: 600, nft: true, slug: 'skullflower' },
+    'Evil Eye':       { value: 550, nft: true, slug: 'evileye' },
+    'Hex Pot':        { value: 550, nft: true, slug: 'hexpot' },
+    'Sharp Tongue':   { value: 600, nft: true, slug: 'sharptongue' },
+    'Signet Ring':    { value: 700, nft: true, slug: 'signetring' },
+    'Spiced Wine':    { value: 500, nft: true, slug: 'spicedwine' },
+    'Bunny Muffin':   { value: 510, nft: true, slug: 'bunnymuffin' },
+    'Astral Shard':   { value: 800, nft: true, slug: 'astralshard' },
+    'Hanging TON':    { value: 505, nft: true, slug: 'hangingstar' }
   };
 
-  function giftIcon(name) {
-    if (typeof CHEAP !== 'undefined' && CHEAP[name]) return CHEAP[name];
+  function hueOf(name) { var h = 0, i; for (i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return h % 360; }
+  function fallback(name) { return w.ART ? w.ART.giftFallback(name, hueOf(name)) : ''; }
+
+  /* list of sources to try, best first */
+  function sources(name) {
     var g = G[name];
-    if (g && g.img) return g.img;
-    return starSvg();
+    if (!g) return [fallback(name)];
+    if (g.local) return [g.img];
+    return [big(g.slug), frag(g.slug), fallback(name)];
   }
-  function giftInfo(name) {
-    return G[name] || { value: 10, nft: false, img: starSvg() };
-  }
+  function giftSrc(name) { return sources(name)[0]; }
 
-  // Case cover images
-  var CASE_IMG = {
-    free: frag('bdaycandle'),
-    dust: frag('deskcalendar'),
-    cheap: frag('toybear'),
-    selected: frag('icecream'),
-    vip: frag('plushpepe')
+  /* <img> with automatic fallback chain; keeps picture crisp (big source first) */
+  function giftImg(name, cls) {
+    var s = sources(name);
+    return '<img class="gimg ' + (cls || '') + '" alt="' + String(name).replace(/"/g, '') + '" decoding="async" src="' + s[0] + '"' +
+      (s[1] ? ' data-s1="' + s[1] + '"' : '') + (s[2] ? ' data-s2="' + s[2] + '"' : '') + ' onerror="window.nxImgErr(this)">';
+  }
+  w.nxImgErr = function (el) {
+    var n = el.getAttribute('data-s1');
+    if (n) { el.removeAttribute('data-s1'); el.src = n; return; }
+    n = el.getAttribute('data-s2');
+    if (n) { el.removeAttribute('data-s2'); el.src = n; return; }
+    el.onerror = null;
   };
 
-  // Game mode icons (SVG data-uri, not letters)
-  function svgIcon(paths, bg) {
-    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="' + (bg||'#1a1a26') + '"/>' + paths + '</svg>';
-    return 'data:image/svg+xml,' + encodeURIComponent(s);
-  }
-  var GAME_IMG = {
-    roulette: 'img/roulette.svg',
-    crash: 'img/crash.svg',
-    upgrade: 'img/craft.svg',
-    plinko: 'img/plinko.svg',
-    pickaxe: 'img/mines.svg'
-  };
+  function giftInfo(name) { return G[name] || { value: 10, nft: false }; }
 
+  /* case cover gifts (peek out of the chest) */
+  var CASE_GIFT = { free: 'B-Day Candle', dust: 'Desk Calendar', selected: 'Ice Cream', half: 'Plush Pepe', cake: 'Homemade Cake' };
 
-  var CHEAP = {
-    'Мишка': svgIcon('<circle cx="32" cy="34" r="14" fill="#8d6a4a"/><circle cx="20" cy="18" r="7" fill="#8d6a4a"/><circle cx="44" cy="18" r="7" fill="#8d6a4a"/><circle cx="27" cy="32" r="2" fill="#111"/><circle cx="37" cy="32" r="2" fill="#111"/>', '#2a2118'),
-    'Сердце': svgIcon('<path d="M32 50 L14 30 C8 22 14 12 24 16 C28 18 32 24 32 24 C32 24 36 18 40 16 C50 12 56 22 50 30 Z" fill="#ff5c7a"/>', '#2a1520'),
-    'Крошка': svgIcon('<circle cx="32" cy="32" r="8" fill="#9aa4b8"/>', '#1c2230'),
-    'Наклейка': svgIcon('<rect x="16" y="18" width="32" height="28" rx="6" fill="#f0c14b"/>', '#2a2410')
-  };
-  w.GIFTS = G;
-  w.giftIcon = giftIcon;
-  w.giftInfo = giftInfo;
-  w.CASE_IMG = CASE_IMG;
-  w.GAME_IMG = GAME_IMG;
+  w.GIFTS = G; w.giftImg = giftImg; w.giftSrc = giftSrc; w.giftInfo = giftInfo; w.CASE_GIFT = CASE_GIFT;
 })(window);
