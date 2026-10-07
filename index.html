@@ -332,6 +332,15 @@ body{background:#05060a}
 
 .ld-plush{width:72px;height:72px;border-radius:24px;background:radial-gradient(circle at 40% 35%,#ffd0dc,#ff6f91 45%,#7c6cf0);animation:sp 1.2s ease-in-out infinite;box-shadow:0 0 24px #7c6cf0}
 .spin.on{background:#07090ff2}.spin-box{height:120px}.si{width:96px}.pays{display:flex;gap:6px;margin:10px 0}.pays button{flex:1;height:54px;border-radius:14px;border:0;background:#1c2433;color:#fff;font-weight:800}.pays button.on{background:#f0c14b;color:#111;box-shadow:0 0 12px #f0c14b}.pays button:disabled{opacity:.35}.paynote{background:#12382f;border-radius:12px;padding:10px;margin-top:8px}.refbox{margin-top:12px;padding:12px;border-radius:16px;background:#12382f}.btn{box-shadow:0 0 14px rgba(47,123,255,.45)}
+
+.nav{position:fixed;left:8px;right:8px;bottom:8px;transform:none;width:auto;max-width:none;height:62px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:4px;z-index:80}
+.nb{height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;color:#9aa3b5}
+.nb span{display:block}
+#app{padding-bottom:96px}
+.cc{animation:float 3s ease-in-out infinite}
+.cc:nth-child(2){animation-delay:.3s}.cc:nth-child(3){animation-delay:.6s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
 </style>
 </head>
 <body>
@@ -350,7 +359,6 @@ body{background:#05060a}
       </div>
       <button type="button" class="btn-pay" id="btnDeposit">+ Пополнить</button>
       <div class="hdr-right">
-        <button type="button" class="btn-pay adm" id="topAdmin">Админ</button>
         <div class="bal"><span class="st ton-ico"></span> <b id="balanceTON">0</b></div>
       </div>
     </header>
@@ -580,6 +588,6 @@ body{background:#05060a}
   </div>
 
   <script src="gifts.js?v=7"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

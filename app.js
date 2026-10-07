@@ -558,7 +558,18 @@
   function renderLb() {
     var box = $('lb');
     if (!box) return;
-    box.innerHTML = '<div class="empty">Leaderboard needs cloud sync. Your spent: ' + ((user && user.total_spent) || 0) + ' TON</div>';
+    var rows = [];
+    try { rows = JSON.parse(localStorage.getItem('nv_top') || '[]'); } catch (e) {}
+    if (user) {
+      var mine = { id: user.id, name: user.first_name || 'Я', spent: Number(user.total_spent || 0) };
+      var idx = rows.findIndex(function (r) { return String(r.id) === String(user.id); });
+      if (idx >= 0) rows[idx] = mine; else rows.push(mine);
+      localStorage.setItem('nv_top', JSON.stringify(rows));
+    }
+    rows.sort(function (a, b) { return b.spent - a.spent; });
+    box.innerHTML = rows.map(function (r, i) {
+      return '<div class="rowline"><span>' + (i + 1) + '. ' + r.name + '</span><b>' + r.spent + ' TON</b></div>';
+    }).join('') || '<div class="empty">Пока пусто</div>';
   }
 
   function refs() {
@@ -567,12 +578,11 @@
   function renderProf() {
     var c = $('prof'); if (!c || !user) return;
     var av = user.photo_url ? '<img src="' + user.photo_url + '" alt="">' : ((user.first_name || '?')[0] || '?').toUpperCase();
-    var adminBtn = '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button>';
+    var role = sameId(user.id, OWNER_ID) ? 'Владелец' : (isStaff() ? 'Админ' : 'Игрок');
+    var adminBtn = '<div class="pid">Статус: ' + role + '</div>' + (isStaff() ? '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button>' : '');
     var list = refs();
     var rows = list.length ? list.map(function (r) { return '<div class="rowline"><span>' + r.name + '</span><b>' + r.earned + ' TON · 2%</b></div>'; }).join('') : '<div class="hint">Пока никого нет</div>';
     c.innerHTML = '<div class="bav">' + av + '</div><div class="pn">' + (user.first_name || 'Player') + '</div><div class="pid">ID: ' + user.id + '</div><div class="refbox"><b>Приглашай друзей — 2% с пополнения</b><div class="hint">https://t.me/nexvendrop_bot?start=ref_' + user.id + '</div>' + rows + '<button type="button" class="btn" id="btnRef">Пригласить</button><a class="btn-o" href="https://t.me/nexvendropmananger" target="_blank">Поддержка</a></div>' + adminBtn;
-    var top = $('topAdmin');
-    if (top) top.onclick = function () { if (ba) ba.click(); };
     var ba = $('btnOpenAdmin');
     if (ba) ba.onclick = function () {
       if (!isStaff()) { toast('Нет прав. Твой ID ' + user.id, 'error'); return; }
@@ -580,9 +590,7 @@
       if (role) role.textContent = sameId(user.id, OWNER_ID) ? 'Владелец: можно выдавать и забирать' : 'Админ: можно принять заказ, выдавать нельзя';
       $('modAdmin').classList.add('on');
     };
-    var topAdm = $('topAdmin');
-    if (topAdm) topAdm.classList.toggle('hide', !isStaff());
-  }
+      }
 
   /* ===== SHARED ROUND ENGINE (wall-clock sync) ===== */
   function seeded(seed) {
