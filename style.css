@@ -258,3 +258,28 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:-apple-sys
 .mode-cs2 .cart.cheap{background:linear-gradient(145deg,#2a2010,#181008)}
 .mode-cs2 .cart.sel{background:linear-gradient(145deg,#1a2030,#0c1018)}
 .mode-cs2 .cart.vip{background:linear-gradient(145deg,#2a1810,#180c08)}
+
+/* 1GIFT look, logic untouched */
+:root{--bg:#07090f;--c:#141820;--c2:#1b2230;--l:rgba(255,255,255,.08);--a:#2f7bff;--a2:#79b6ff;--g:#e8eef8;--nav:72px}
+body{background:#05060a}
+.hdr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px 12px;background:#07090fee}
+.hdr-user{min-width:0}
+.nm{font-size:13px;font-weight:800;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{width:40px;height:40px;border:0;background:#243044}
+.btn-pay{height:38px;border-radius:999px;padding:0 14px;background:linear-gradient(180deg,#4c90ff,#2d6fe8);box-shadow:0 6px 16px rgba(47,123,255,.35);font-weight:800}
+.btn-pay.adm{background:#1c2433;box-shadow:none;padding:0 10px}
+.bal{height:38px;margin:0;padding:0 12px;border-radius:999px;background:#171c27;border:1px solid var(--l);color:#fff;font-weight:800}
+.ton-ico{width:16px;height:16px;border-radius:50%;background:#2ea7ff;display:inline-block;position:relative}
+.ton-ico:after{content:"";position:absolute;left:4px;top:3px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:9px solid #fff}
+.cases{gap:12px}
+.cc{border-radius:22px;padding:14px 10px 12px;background:#121722}
+.cart{width:108px;height:108px;border-radius:18px;background:#0c1018}
+.cart img{width:96px;height:96px;object-fit:contain}
+.gcard{min-height:92px;border-radius:20px;background:#121722;overflow:hidden}
+.gico{width:72px;height:72px;border-radius:16px;overflow:hidden;flex:none}
+.gico img{width:72px;height:72px;object-fit:cover}
+.nav{left:12px;right:12px;bottom:10px;width:auto;border-radius:22px;background:#121826ee;border:1px solid var(--l);padding:6px}
+.nb{border-radius:14px}
+.nb.on{background:#24304a;color:#fff}
+.sh-p{border-radius:24px 24px 0 0;background:#121722}
+.cp-art img{width:120px!important;height:120px!important}
