@@ -1,5 +1,7 @@
-Firebase Console -> Build -> Firestore Database -> Create database (режим Production, любой регион).
-Потом вкладка Rules -> вставь и нажми Publish:
+НАСТРОЙКА ОБЩЕГО ТОПА, РЕФЕРАЛОВ, ПРОМОКОДОВ И ВЫДАЧИ TON
+1) console.firebase.google.com -> создать проект -> Build -> Firestore Database -> Create database.
+2) Project settings -> General: скопировать Project ID и Web API Key в config.js (projectId, apiKey).
+3) Firestore -> Rules -> вставить и нажать Publish:
 
 rules_version = '2';
 service cloud.firestore {
@@ -10,9 +12,7 @@ service cloud.firestore {
   }
 }
 
-Используемые коллекции создаются сами:
-  players/{id}  - топ, онлайн и резервная копия баланса/инвентаря
-  grants/{auto} - выдачи TON и сброс бесплатного кейса другим игрокам
-  admins/{id}   - выданные админки
+Коллекции создаются сами: players (топ, рефералы), promos (промокоды), grants (выдача от админа).
+Без заполненного config.js топ, рефералы, промокоды и выдача другим игрокам НЕ работают.
 
-Без этих шагов выдача другим игрокам, админки, топ и онлайн НЕ РАБОТАЮТ.
+Для рефералов бот при пополнении должен открывать WebApp со ссылкой вида  ...?sync=БАЛАНС&dep=СУММА_ПОПОЛНЕНИЯ_В_TON&dt=УНИКАЛЬНЫЙ_ID_ПЛАТЕЖА

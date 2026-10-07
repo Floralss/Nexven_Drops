@@ -105,10 +105,21 @@
           <button type="button" class="btn" id="btnAdmGive">Выдать TON</button>
           <button type="button" class="btn ghost" id="btnAdmTake">Забрать TON</button>
           <button type="button" class="btn ghost" id="btnAdmFree">Сбросить бесплатный кейс</button>
-          <button type="button" class="btn ghost" id="btnAdmAdd">Выдать админку</button>
-          <button type="button" class="btn ghost" id="btnAdmDel">Забрать админку</button>
-          <div id="admList" class="hint"></div>
           <div id="admRes" class="hint"></div>
+        </div>
+        <div id="admPromoBox" class="fs" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+          <label style="font-size:15px;color:#fff;font-weight:800">Промокоды</label>
+          <label>Код</label><input type="text" id="pmCode" placeholder="например SUMMER" autocapitalize="characters" />
+          <label>Тип награды</label>
+          <select id="pmKind" class="inp" style="margin:0"><option value="ton">TON на баланс</option><option value="case">Открытия кейса</option><option value="gift">Подарок в инвентарь</option></select>
+          <div id="pmAmtWrap"><label id="pmAmtLbl">Сколько TON</label><input type="number" id="pmAmt" value="1" step="0.1" /></div>
+          <div id="pmCaseWrap" class="hide"><label>Кейс</label><select id="pmCase" class="inp" style="margin:0"></select></div>
+          <div id="pmGiftWrap" class="hide"><label>Подарок</label><select id="pmGift" class="inp" style="margin:0"></select></div>
+          <label>Лимит активаций (0 = без лимита)</label><input type="number" id="pmMax" value="0" />
+          <label>Действует дней (0 = бессрочно)</label><input type="number" id="pmDays" value="0" />
+          <button type="button" class="btn" id="btnPmCreate">Создать промокод</button>
+          <button type="button" class="btn ghost" id="btnPmGrant">Выдать кейсы игроку (ID и кол-во выше)</button>
+          <div id="pmList" class="hint"></div>
         </div>
       </div>
     </div>

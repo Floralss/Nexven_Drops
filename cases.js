@@ -4,50 +4,34 @@
   var $ = NX.$, ART = window.ART;
 
   /* ===== CASE DATA (names / prices / odds unchanged) ===== */
-  /* helper: prize taken from the gifts catalogue (value comes from gifts.js) */
-  function gp(name, chance) { var g = window.GIFTS[name] || {}; return { name: name, value: g.value || 10, chance: chance, nft: !!g.nft }; }
   var CASES = {
     free: { id: 'free', name: 'Daily case', price: 0, desc: 'Раз в 24 часа', prizes: [
       { name: 'Мишка', value: 0.05, chance: 46 }, { name: 'Сердце', value: 0.08, chance: 34 }, { name: '1 TON', value: 1, chance: 20 },
       { name: 'Plush Pepe', value: 900, chance: 0.001, nft: true }
     ] },
-    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки, сердца и редкие NFT', prizes: [
+    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки и сердца', prizes: [
       { name: 'Мишка', value: 0.12, chance: 40 }, { name: 'Сердце', value: 0.16, chance: 32 }, { name: '1 TON', value: 1, chance: 28 },
-      { name: 'Крошка', value: 0.05, chance: 6 }, { name: 'Наклейка', value: 0.05, chance: 6 }, { name: '2 TON', value: 2, chance: 1.2 },
-      gp('Toy Bear', 0.08), gp('Eternal Rose', 0.04),
-      { name: 'Ice Cream', value: 640, chance: 0.001, nft: true },
-      gp('Top Hat', 0.001), gp('Hypno Lollipop', 0.001), gp('Jester Hat', 0.001), gp('Snow Mittens', 0.001), gp('Santa Hat', 0.001), gp('Witch Hat', 0.001), gp('Evil Eye', 0.001)
+      { name: 'Ice Cream', value: 640, chance: 0.001, nft: true }
     ] },
-    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши и NFT', prizes: [
+    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши', prizes: [
       { name: 'Мишка', value: 0.2, chance: 36 }, { name: 'Сердце', value: 0.3, chance: 30 }, { name: '1 TON', value: 1, chance: 34 },
-      { name: '2 TON', value: 2, chance: 6 }, { name: '5 TON', value: 5, chance: 1 },
-      gp('Toy Bear', 0.25), gp('Eternal Rose', 0.12), gp('Cookie Heart', 0.05), gp('Love Candle', 0.05),
-      { name: 'Crystal Ball', value: 1200, chance: 0.001, nft: true },
-      gp('Lunar Snake', 0.002), gp('Party Sparkler', 0.002), gp('Magic Potion', 0.002), gp('Genie Lamp', 0.002), gp('Voodoo Doll', 0.002),
-      gp('Flying Broom', 0.002), gp('Skull Flower', 0.002), gp('Hex Pot', 0.002), gp('Sharp Tongue', 0.002), gp('Spiced Wine', 0.002), gp('Bunny Muffin', 0.002)
+      { name: 'Crystal Ball', value: 1200, chance: 0.001, nft: true }
     ] },
     half: { id: 'half', name: '50|50 case', price: 5, desc: 'Мишка или NFT', prizes: [
       { name: 'Мишка', value: 0.4, chance: 99.9 },
-      { name: 'Plush Pepe', value: 1600, chance: 0.1, nft: true },
-      gp('Precious Peach', 0.004), gp('Durov\'s Cap', 0.003), gp('Spy Agaric', 0.004), gp('Kissed Frog', 0.004), gp('Jelly Bunny', 0.004), gp('Scared Cat', 0.004),
-      gp('Trapped Heart', 0.004), gp('Perfume Bottle', 0.004), gp('Vintage Cigar', 0.004), gp('Signet Ring', 0.004), gp('Astral Shard', 0.004), gp('Hanging TON', 0.004),
-      gp('Crystal Ball', 0.004), gp('Genie Lamp', 0.004), gp('Jack-in-the-Box', 0.004)
+      { name: 'Plush Pepe', value: 1600, chance: 0.1, nft: true }
     ] },
-    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, торты и NFT', prizes: [
+    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, мишки, сердца', prizes: [
       { name: 'Мишка', value: 0.3, chance: 28 }, { name: 'Сердце', value: 0.4, chance: 24 }, { name: '1 TON', value: 1, chance: 22 },
       { name: 'Homemade Cake', value: 2, chance: 16 }, { name: 'Berry Box', value: 2.4, chance: 10 },
-      { name: '2 TON', value: 2, chance: 4 }, { name: '5 TON', value: 5, chance: 1.5 },
-      gp('Cookie Heart', 0.4), gp('B-Day Candle', 0.4), gp('Love Candle', 0.4), gp('Desk Calendar', 0.4), gp('Toy Bear', 0.3), gp('Eternal Rose', 0.15),
-      { name: 'Candy Cane', value: 1800, chance: 0.001, nft: true }, { name: 'Ice Cream', value: 2100, chance: 0.001, nft: true },
-      gp('Snow Mittens', 0.002), gp('Santa Hat', 0.002), gp('Spiced Wine', 0.002), gp('Bunny Muffin', 0.002), gp('Party Sparkler', 0.002),
-      gp('Hypno Lollipop', 0.002), gp('Top Hat', 0.002), gp('Jester Hat', 0.002), gp('Lunar Snake', 0.002), gp('Plush Pepe', 0.001), gp('Precious Peach', 0.001)
+      { name: 'Candy Cane', value: 1800, chance: 0.001, nft: true }, { name: 'Ice Cream', value: 2100, chance: 0.001, nft: true }
     ] }
   };
   NX.CASES = CASES;
 
-  /* every prize drops at exactly its listed chance; NFTs are listed at a tiny chance, so they are very rare */
+  /* NFT prizes are display-only and never drop (shown as 0%); everything else drops at its listed chance */
   function roll(prizes) {
-    var pool = prizes.filter(function (p) { return p.chance > 0; });
+    var pool = prizes.filter(function (p) { return p.chance > 0 && !p.nft; });
     var t = 0, i; for (i = 0; i < pool.length; i++) t += pool[i].chance;
     var r = NX.rand() * t;
     for (i = 0; i < pool.length; i++) { r -= pool[i].chance; if (r <= 0) return pool[i]; }
@@ -120,7 +104,7 @@
       (id === 'free' ? '' : '<div class="lab">Сколько открыть?</div><div class="qty" id="qtyBox">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-q="' + n + '"' + (n === 1 ? ' class="on"' : '') + '>' + n + '</button>'; }).join('') + '</div>') +
       '<div class="lab">Содержимое кейса</div><div class="items">' + items.map(function (p) {
         return '<div class="it' + (p.nft ? ' nft' : '') + '" style="--rc:' + NX.tier(p.value, p.nft) + '">' + window.giftImg(p.name) +
-          '<div class="it-n">' + NX.esc(p.name) + '</div><div class="it-v">' + NX.tonI(13) + NX.fmt(p.value) + '</div><div class="it-c">' + p.chance + '%</div></div>';
+          '<div class="it-n">' + NX.esc(p.name) + '</div><div class="it-v">' + NX.tonI(13) + NX.fmt(p.value) + '</div><div class="it-c">' + (p.nft ? 0 : p.chance) + '%</div></div>';
       }).join('') + '</div>' +
       '<button type="button" class="btn" id="btnOpen" style="margin-top:16px"></button>';
     $('demoMode').onchange = function () { demo = this.checked; refreshSheet(); NX.haptic('select'); };
@@ -145,10 +129,11 @@
       else { pr.innerHTML = '<span class="cprice free">БЕСПЛАТНО</span>'; btn.textContent = demo ? 'Открыть демо' : 'Открыть бесплатно'; }
     } else {
       pr.innerHTML = '<span class="cprice">' + NX.tonI(16) + NX.fmt(c.price) + '</span>';
-      var cost = NX.r2(c.price * qty);
+      var cr = (u.cc && u.cc[c.id]) || 0, cost = NX.r2(c.price * Math.max(0, qty - cr));
+      if (cr) pr.innerHTML += ' <span class="hint">· промо-открытий: ' + cr + '</span>';
       if (demo) btn.textContent = 'Открыть демо' + (qty > 1 ? ' ×' + qty : '');
       else if (!NX.canPay(cost)) { ok = false; btn.textContent = 'Не хватает TON · нужно ' + NX.fmt(cost); }
-      else btn.textContent = 'Открыть' + (qty > 1 ? ' ×' + qty : '') + ' · ' + NX.fmt(cost) + ' TON';
+      else btn.textContent = 'Открыть' + (qty > 1 ? ' ×' + qty : '') + (cost ? ' · ' + NX.fmt(cost) + ' TON' : ' · бесплатно (промо)');
     }
     btn.disabled = !ok;
   }
@@ -165,14 +150,20 @@
     var c = CASES[selCase], u = NX.user(), n = c.id === 'free' ? 1 : qty, isDemo = demo;
     if (!isDemo) {
       if (c.id === 'free') { if (freeLeft() > 0) { NX.toast('Бесплатный кейс ещё не готов', 'error'); return; } }
-      else { var cost = NX.r2(c.price * n); if (!NX.canPay(cost)) { NX.toast('Не хватает TON', 'error'); return; } }
+      else { var cr0 = (u.cc && u.cc[c.id]) || 0, cost = NX.r2(c.price * Math.max(0, n - cr0)); if (cost > 0 && !NX.canPay(cost)) { NX.toast('Не хватает TON', 'error'); return; } }
     }
     opening = true; NX.close('shCase');
     var wins = [], i;
     for (i = 0; i < n; i++) wins.push(roll(c.prizes));
     var added = [], tonGain = 0;
     if (!isDemo) {
-      if (c.id === 'free') u.last_free = Date.now(); else NX.spend(c.price * n);
+      if (c.id === 'free') u.last_free = Date.now();
+      else {
+        var cr1 = (u.cc && u.cc[c.id]) || 0, usedCr = Math.min(cr1, n);
+        if (usedCr) { u.cc[c.id] = cr1 - usedCr; if (!u.cc[c.id]) delete u.cc[c.id]; }
+        var pay = NX.r2(c.price * (n - usedCr)); if (pay > 0) NX.spend(pay); else { NX.stat('opened', 0); NX.save(true); }
+        if (usedCr) u.total_spent = NX.r2((u.total_spent || 0) + NX.r2(c.price * usedCr));
+      }
       wins.forEach(function (p) {
         if (isTonPrize(p)) tonGain += p.value; else added.push(NX.addItem(p));
         NX.noteBest(p.name, p.value);
@@ -201,10 +192,8 @@
     });
     if (!fast) setTimeout(function () { if (opening) skipBtn.classList.remove('hide'); }, 1600);
     skipBtn.onclick = function () { skip = true; };
-    var guard = setTimeout(function () { if (opening) { skip = true; } }, 20000);
     (function frame(now) {
       var all = true;
-      try {
       info.forEach(function (o, idx) {
         if (o.fin) return;
         var t = skip ? 1 : Math.max(0, Math.min(1, (now - t0) / o.dur));
@@ -214,15 +203,14 @@
         if (idx === 0 && lastIdx[idx] !== ix) { lastIdx[idx] = ix; if (t < .985) { NX.sfx('tick'); if (ix % 2) NX.haptic('light'); } }
         if (t >= 1) { o.fin = true; o.st.children[W].classList.add('win'); NX.sfx('land'); } else all = false;
       });
-      } catch (err) { all = true; try { console.error(err); } catch (x) {} }
       if (!all) requestAnimationFrame(frame);
-      else { clearTimeout(guard); setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain); }, skip ? 450 : 850); }
+      else setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain); }, skip ? 450 : 850);
     })(performance.now());
   }
 
   function finishOpen(c, wins, added, isDemo, tonGain) {
     $('spin').classList.remove('on'); $('spinSkip').classList.add('hide');
-    opening = false; if (!wins.length) return;
+    opening = false;
     NX.renderUser(); if (NX.cur() === 'cases') renderCases();
     var best = wins.reduce(function (a, b) { return b.value > a.value ? b : a; }, wins[0]);
     var sum = NX.r2(wins.reduce(function (s, p) { return s + p.value; }, 0));

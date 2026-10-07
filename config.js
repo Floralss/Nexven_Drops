@@ -1,7 +1,6 @@
-/* Nexven Drop — Firebase (Firestore REST, без SDK).
-   ОБЯЗАТЕЛЬНО впиши оба значения: Firebase Console -> Project settings -> General
-   (projectId = "Project ID", apiKey = "Web API Key").
-   Пока пусто: нет общего топа, нет онлайна, нет выдачи другим игрокам и выдачи админки. */
+/* Nexven Drop — online + global leaderboard (Firebase Firestore, REST, no SDK).
+   Fill these two values from Firebase Console -> Project settings -> General.
+   Rules must be published as in FIREBASE_RULES.txt. While empty, the leaderboard is local-only. */
 window.NEXVEN_CFG = {
   projectId: '',
   apiKey: ''
