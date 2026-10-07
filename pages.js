@@ -48,24 +48,31 @@
   }
   function loadBoard(first) {
     var u = NX.user(), box = $('lbRows'), head = $('lbOnline');
-    if (!NX.net.enabled()) {
-      var rows = localRows(); rows.forEach(function (r) { r.online = String(r.id) === String(u.id); });
-      head.innerHTML = '<i class="dot"></i>Онлайн: <b>1</b>';
-      box.innerHTML = rowsHtml(rows, u) + (NX.isStaff() ? '<div class="empty">Общий топ выключен: впиши projectId и apiKey Firebase в config.js, и здесь появятся все игроки.</div>' : '');
+    if (!NX.net || !NX.net.enabled()) {
+      head.innerHTML = '<i class="dot"></i>Онлайн: —';
+      box.innerHTML = '<div class="empty">Firebase не настроен в config.js</div>';
       return;
     }
     if (first) box.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>';
     NX.net.push(true);
     NX.net.fetchBoard().then(function (res) {
       if (NX.cur() !== 'top') return;
-      var rows = res.rows, mine = rows.some(function (r) { return String(r.id) === String(u.id); });
+      var rows = res.rows || [], mine = rows.some(function (r) { return String(r.id) === String(u.id); });
       if (!mine) rows.push({ id: u.id, name: u.first_name || 'Игрок', photo: u.photo_url || null, spent: NX.r2(u.total_spent || 0), best: (u.stats && u.stats.best) || null, online: true });
       rows.sort(function (a, b) { return b.spent - a.spent; });
       head.innerHTML = '<i class="dot"></i>Онлайн: <b>' + Math.max(res.online, 1) + '</b><span class="tot">Игроков: ' + rows.length + '</span>';
       box.innerHTML = rowsHtml(rows, u);
     }).catch(function () {
       if (NX.cur() !== 'top') return;
-      if (first) box.innerHTML = '<div class="empty">Не удалось загрузить рейтинг.<br><button type="button" class="btn sm ghost" id="lbRetry" style="margin-top:12px;max-width:200px">Повторить</button></div>';
+      head.innerHTML = '<i class="dot"></i>Онлайн: —';
+      box.innerHTML = '<div class="empty" style="line-height:1.5;padding:16px">' +
+        '<b style="color:#fff">Firestore: база Firestore не создана</b><br><br>' +
+        '1. Открой ссылку ниже<br>' +
+        '2. Create database → <b>test mode</b> → Enable<br>' +
+        '3. Rules → allow read, write: if true → Publish<br>' +
+        '4. Нажми «Повторить»<br><br>' +
+        '<a href="https://console.firebase.google.com/project/custom-graphics-36c50/firestore" target="_blank" rel="noopener" style="color:#5aa2ff">Открыть Firebase Console</a><br><br>' +
+        '<button type="button" class="btn sm" id="lbRetry" style="margin-top:8px;max-width:200px">Повторить</button></div>';
       var rb = $('lbRetry'); if (rb) rb.onclick = function () { loadBoard(true); };
     });
   }
@@ -106,7 +113,7 @@
       $('sndOn').onchange = function () { NX.setMuted(!this.checked); NX.haptic('select'); };
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
-        $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать и забирать TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
+        $('admRole').textContent = NX.isOwner() ? 'Владелец: выдача себе и через бота' : 'Админ: выдача себе и через бота';
         NX.open('modAdmin');
       };
     }
@@ -135,52 +142,59 @@
     /* admin */
     var u = function () { return NX.user(); };
     $('btnAdmGive').onclick = function () {
-      if (!NX.isOwner()) { NX.toast('Выдавать может только владелец', 'error'); return; }
+      if (!NX.isStaff()) { NX.toast('Нет доступа', 'error'); return; }
       var tid = parseInt($('admId').value, 10), amt = parseFloat(String($('admAmt').value).replace(',', '.'));
       if (!tid || isNaN(amt) || amt === 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
-      if (tid === u().id) {
+      if (Number(tid) === Number(u().id)) {
         NX.credit(amt);
         NX.save(true);
+        try { if (NX.net && NX.net.push) NX.net.push(true); } catch (e) {}
         $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON';
         NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
         return;
       }
-      if (!NX.net || !NX.net.enabled()) {
-        $('admRes').textContent = 'Для выдачи другим нужен Firebase: впиши projectId и apiKey в config.js';
+      if (!NX.net || !NX.net.enabled() || !NX.net.grant) {
+        $('admRes').textContent = 'Firebase не настроен';
         NX.toast('Firebase не настроен', 'error');
         return;
       }
-      $('admRes').textContent = 'Отправляем…';
+      $('admRes').textContent = 'Отправляем через Firebase…';
       NX.net.grant(tid, amt, function (err) {
         if (err) {
-          $('admRes').textContent = 'Ошибка Firebase. Создай Firestore в консоли (см. FIREBASE_RULES.txt) или выдай через бота: /start → Admin → Give TON';
-          NX.toast('Firebase недоступен — выдай через бота', 'error');
+          var msg = String(err.message || err);
+          if (msg === 'NO_DB' || msg.indexOf('does not exist') >= 0) {
+            $('admRes').textContent = 'Нет базы Firestore. Create database в Firebase Console (test mode), затем повтори.';
+          } else {
+            $('admRes').textContent = 'Ошибка: ' + msg;
+          }
+          NX.toast('Не удалось выдать', 'error');
         } else {
-          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON игроку ' + tid + '. Он получит при следующем заходе.';
+          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON → ' + tid + '. Игрок получит при входе в апп.';
           NX.sfx('win'); NX.toast('Выдано', 'success');
         }
       });
     };
     $('btnAdmTake').onclick = function () {
-      if (!NX.isOwner()) { NX.toast('Забирать может только владелец', 'error'); return; }
+      if (!NX.isStaff()) { NX.toast('Нет доступа', 'error'); return; }
       var amt = parseFloat(String($('admAmt').value).replace(',', '.')) || 0;
       var tid = parseInt($('admId').value, 10);
-      if (tid === u().id) {
+      if (Number(tid) === Number(u().id)) {
         NX.credit(-Math.min(Math.abs(amt), u().balance));
         NX.save(true);
         $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON';
+        NX.toast('Забрано', 'success');
       } else {
-        NX.toast('Забирать у других можно только себе', 'error');
+        NX.toast('Забирать можно только у себя в мини-аппе', 'error');
       }
     };
     $('btnAdmFree').onclick = function () {
       if (!NX.isStaff()) return;
       var tid = parseInt($('admId').value, 10);
-      if (tid === u().id) {
+      if (Number(tid) === Number(u().id)) {
         u().last_free = 0; NX.save(true);
         $('admRes').textContent = 'Бесплатный кейс сброшен';
         NX.toast('Бесплатный кейс готов', 'success');
-      } else NX.toast('Сброс free-кейса только для себя', 'error');
+      } else NX.toast('Сброс free только для себя', 'error');
     };
   }
   NX.bindModals = bindModals;

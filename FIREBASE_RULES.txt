@@ -1,8 +1,18 @@
-КРИТИЧНО: сначала СОЗДАЙ базу Firestore, иначе будет "Ошибка Firebase".
+═══════════════════════════════════════════════════════════
+  СЕЙЧАС БАЗА FIRESTORE НЕ СОЗДАНА — ПОЭТОМУ ВСЁ ПАДАЕТ
+═══════════════════════════════════════════════════════════
 
-1. Открой: https://console.firebase.google.com/project/custom-graphics-36c50/firestore
-2. Create database → Start in test mode → Enable (регион любой)
-3. Rules → вставь и Publish:
+Сделай ОДИН РАЗ (2 минуты):
+
+1) Открой:
+   https://console.firebase.google.com/project/custom-graphics-36c50/firestore
+
+2) Нажми «Create database»
+
+3) Выбери «Start in test mode» → Next → Enable
+   (регион можно оставить по умолчанию)
+
+4) Вкладка Rules → вставь и Publish:
 
 rules_version = '2';
 service cloud.firestore {
@@ -13,6 +23,15 @@ service cloud.firestore {
   }
 }
 
-Без шага 2 лидерборд, онлайн и выдача другим через мини-апп НЕ работают.
-Выдача себе работает всегда (localStorage + CloudStorage).
-Выдача другим через БОТА работает всегда (кнопка sync).
+5) Залей папку web/ на GitHub Pages и переоткрой мини-апп.
+
+После этого заработают:
+  • общий лидерборд
+  • онлайн
+  • выдача TON другим из админки
+
+Ключи уже прописаны в config.js:
+  projectId: custom-graphics-36c50
+  apiKey: AIzaSyAPTTDTPzDpKQjpPvze1IBsJQJw74_ua34
+
+БЕЗ шага Create database никакой код не поможет — Google возвращает 404.
