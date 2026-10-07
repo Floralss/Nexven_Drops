@@ -356,20 +356,18 @@
   function renderGames() {
     var box = $('gamesList'); if (!box) return;
     var list = [
-      { id: 'roulette', title: 'Roulette', desc: '5s bet · shared wheel' },
-      { id: 'crash', title: 'Crash', desc: '5s bet · rocket flight' },
-      { id: 'upgrade', title: 'Upgrade', desc: 'NFT · chance % · wheel' },
-      { id: 'plinko', title: 'Plinko', desc: 'Drop balls · multipliers' },
-      { id: 'pickaxe', title: 'Pickaxe', desc: 'Mine · stop in time' }
+      { id: 'plinko', title: 'ПЛИНКО', desc: 'Шарик и множители' },
+      { id: 'crash', title: 'КРАШ', desc: 'Ракета и коэффициент' },
+      { id: 'pickaxe', title: 'МИНЫ', desc: 'Сетка и шаги' },
+      { id: 'roulette', title: 'РУЛЕТКА', desc: 'Общее колесо' },
+      { id: 'upgrade', title: 'КРАФТ', desc: 'Улучшение предмета' }
     ];
     box.innerHTML = '';
     list.forEach(function (g) {
-      var el = document.createElement('div');
-      el.className = 'gcard';
-      el.setAttribute('data-g', g.id);
-      el.innerHTML = '<div class="gico"><img src="' + gameImg(g.id) + '" alt="" width="48" height="48" style="border-radius:12px"></div>' +
-        '<div class="ginfo"><div class="gt">' + g.title + '</div><div class="gd">' + g.desc + '</div></div>' +
-        '<button type="button" class="gbtn">Play</button>';
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'banner';
+      el.innerHTML = '<img src="' + gameImg(g.id) + '" alt="' + g.title + '"><span>' + g.title + '</span><small>' + g.desc + '</small>';
       el.onclick = function () {
         if (g.id === 'roulette' || g.id === 'crash') openArena(g.id);
         else if (g.id === 'upgrade') openUpgrade();
