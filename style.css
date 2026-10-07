@@ -126,7 +126,7 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 
 /* ---------- main menu: game banners ---------- */
 .banners{display:flex;flex-direction:column;gap:14px}
-.banner{position:relative;display:block;width:100%;height:152px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .35s var(--spring),box-shadow .3s;text-align:left;isolation:isolate;opacity:0;animation:cardIn .6s var(--ease) forwards}
+.banner{position:relative;display:block;width:100%;height:152px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .35s var(--spring),box-shadow .3s;text-align:left;isolation:isolate;opacity:1;animation:cardIn .6s var(--ease) both}
 .banner:active{transform:scale(.97)}
 .banner svg.bn{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
 .banner::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,7,12,.78),rgba(6,7,12,0) 62%),linear-gradient(0deg,rgba(6,7,12,.5),transparent 45%);pointer-events:none}

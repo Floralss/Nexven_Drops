@@ -128,11 +128,15 @@
 
   /* ---------- case chest (viewBox 200x170) ---------- */
   var CHEST = {
-    free:     { a: '#2bd98a', b: '#0e6b44', c: '#0a3b28', glow: '#2bd98a' },
-    dust:     { a: '#4aa3ff', b: '#1f5fc4', c: '#0e2f66', glow: '#3d8bff' },
-    selected: { a: '#a971ff', b: '#6a35d6', c: '#2f1670', glow: '#a971ff' },
-    half:     { a: '#ffcc4d', b: '#c98a14', c: '#6a4308', glow: '#ffb629' },
-    cake:     { a: '#ff7eb6', b: '#d23a82', c: '#6e1442', glow: '#ff6aa8' }
+    free:     { a: '#7ad0ff', b: '#2a7de0', c: '#163a78', glow: '#4aa3ff' },
+    dust:     { a: '#c9a46a', b: '#8a6230', c: '#3d2a12', glow: '#d4a35c' },
+    selected: { a: '#c9a0ff', b: '#7b4ad6', c: '#3a1f78', glow: '#a971ff' },
+    half:     { a: '#ffb36b', b: '#e07020', c: '#6e3010', glow: '#ff9a3c' },
+    cake:     { a: '#ff7eb6', b: '#d23a82', c: '#6e1442', glow: '#ff6aa8' },
+    neon:     { a: '#5ef0c8', b: '#12a88a', c: '#0a3d34', glow: '#2be3a0' },
+    legend:   { a: '#ffe08a', b: '#e0a21c', c: '#6e4a08', glow: '#ffc857' },
+    titan:    { a: '#9ab6ff', b: '#3d5fd8', c: '#1a2758', glow: '#5aa2ff' },
+    void:     { a: '#d0a0ff', b: '#6b2fd6', c: '#2a0f55', glow: '#a971ff' }
   };
   function chest(key) {
     var k = CHEST[key] || CHEST.dust, g = id('ch');

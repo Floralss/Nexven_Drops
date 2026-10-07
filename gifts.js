@@ -98,7 +98,7 @@
   function giftInfo(name) { return G[name] || { value: 10, nft: false }; }
 
   /* case cover gifts (peek out of the chest) */
-  var CASE_GIFT = { free: 'B-Day Candle', dust: 'Desk Calendar', selected: 'Ice Cream', half: 'Plush Pepe', cake: 'Homemade Cake' };
+  var CASE_GIFT = { free: 'B-Day Candle', dust: 'Desk Calendar', selected: 'Ice Cream', half: 'Plush Pepe', cake: 'Homemade Cake', neon: 'Signet Ring', legend: 'Crystal Ball', titan: 'Astral Shard', void: "Durov's Cap" };
 
   w.GIFTS = G; w.giftImg = giftImg; w.giftSrc = giftSrc; w.giftInfo = giftInfo; w.CASE_GIFT = CASE_GIFT;
 })(window);

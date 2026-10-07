@@ -12,15 +12,32 @@
     { id: 'craft', title: 'КРАФТ', desc: 'Улучшение предмета', tag: 'x1.5 – x5', art: 'craft' }
   ];
   NX.pages.games = {
-    enter: function () { clearInterval(onT); var upd = function () { if (NX.net.enabled()) NX.net.fetchOnline().then(function (n) { var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1); }, function () {}); }; upd(); onT = setInterval(upd, 20000); },
-    leave: function () { clearInterval(onT); },
     build: function () {
-      $('v-games').innerHTML = '<div class="lb-online sm" id="gmOnline"><i class="dot"></i>Онлайн: <b id="gmOnN">1</b></div><div class="banners">' + GAMES.map(function (g, i) {
+      var root = $('v-games');
+      root.innerHTML = '<div class="lb-online sm" id="gmOnline"><i class="dot"></i>Онлайн: <b id="gmOnN">1</b></div><div class="banners">' + GAMES.map(function (g, i) {
         return '<button type="button" class="banner" data-game="' + g.id + '" style="animation-delay:' + (i * 90) + 'ms">' + ART.banners[g.art]() +
           '<span class="bn-tag">' + g.tag + '</span><span class="bn-label"><div class="bn-t">' + g.title + '</div><div class="bn-d">' + g.desc + '</div></span></button>';
       }).join('') + '</div>';
-      $('v-games').onclick = function (e) { var b = e.target.closest('[data-game]'); if (b) { NX.sfx('click'); NX.haptic('light'); NX.go(b.getAttribute('data-game')); } };
-    }
+      root.onclick = function (e) { var b = e.target.closest('[data-game]'); if (b) { NX.sfx('click'); NX.haptic('light'); NX.go(b.getAttribute('data-game')); } };
+    },
+    enter: function () {
+      /* rebuild every enter — fixes broken banners after leaving mini-games */
+      NX.pages.games.build();
+      clearInterval(onT);
+      var upd = function () {
+        if (NX.net && NX.net.enabled()) {
+          NX.net.fetchOnline().then(function (n) {
+            var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1);
+          }, function () { var e = $('gmOnN'); if (e) e.textContent = '1'; });
+        } else {
+          var e = $('gmOnN'); if (e) e.textContent = '1';
+        }
+      };
+      upd();
+      onT = setInterval(upd, 20000);
+      try { window.scrollTo(0, 0); } catch (e) {}
+    },
+    leave: function () { clearInterval(onT); }
   };
 
   /* ===== leaderboard ===== */
@@ -153,26 +170,25 @@
         NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
         return;
       }
-      if (!NX.net || !NX.net.enabled() || !NX.net.grant) {
-        $('admRes').textContent = 'Firebase не настроен';
-        NX.toast('Firebase не настроен', 'error');
-        return;
+      function openBotGive() {
+        var url = 'https://t.me/' + NX.BOT + '?start=give_' + tid + '_' + encodeURIComponent(String(amt));
+        $('admRes').textContent = 'Открываю бота: выдача ' + NX.fmt(amt) + ' TON → ' + tid;
+        try {
+          if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink(url);
+          else window.open(url, '_blank');
+        } catch (e) {}
+        NX.toast('Подтверди выдачу в боте', 'success');
       }
-      $('admRes').textContent = 'Отправляем через Firebase…';
-      NX.net.grant(tid, amt, function (err) {
-        if (err) {
-          var msg = String(err.message || err);
-          if (msg === 'NO_DB' || msg.indexOf('does not exist') >= 0) {
-            $('admRes').textContent = 'Нет базы Firestore. Create database в Firebase Console (test mode), затем повтори.';
-          } else {
-            $('admRes').textContent = 'Ошибка: ' + msg;
+      if (NX.net && NX.net.enabled() && NX.net.grant) {
+        $('admRes').textContent = 'Отправляем…';
+        NX.net.grant(tid, amt, function (err) {
+          if (err) openBotGive();
+          else {
+            $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON → ' + tid + '. Игрок получит при входе.';
+            NX.sfx('win'); NX.toast('Выдано', 'success');
           }
-          NX.toast('Не удалось выдать', 'error');
-        } else {
-          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON → ' + tid + '. Игрок получит при входе в апп.';
-          NX.sfx('win'); NX.toast('Выдано', 'success');
-        }
-      });
+        });
+      } else openBotGive();
     };
     $('btnAdmTake').onclick = function () {
       if (!NX.isStaff()) { NX.toast('Нет доступа', 'error'); return; }
