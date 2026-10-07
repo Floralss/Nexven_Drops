@@ -73,56 +73,27 @@
 
   /* ===== CASES (English, TG prices) ===== */
   var CASES = {
-    free: {
-      id: 'free', name: 'Daily', price: 0, desc: 'Раз в 24 часа', cls: 'free',
-      prizes: [
-        { name: 'Мишка', value: 0.05, chance: 46 },
-        { name: 'Сердце', value: 0.08, chance: 34 },
-        { name: '1 TON', value: 1, chance: 20 },
-        { name: 'Plush Pepe', value: 900, chance: 0.001, nft: true },
-        { name: "Durov's Cap", value: 2200, chance: 0.001, nft: true }
-      ]
-    },
-    dust: {
-      id: 'dust', name: 'Пыль', price: 0.2, desc: 'Мишки и сердца', cls: 'free',
-      prizes: [
-        { name: 'Мишка', value: 0.05, chance: 40 },
-        { name: 'Сердце', value: 0.08, chance: 34 },
-        { name: '1 TON', value: 1, chance: 26 },
-        { name: 'Plush Pepe', value: 420, chance: 0.001, nft: true },
-        { name: "Durov's Cap", value: 1800, chance: 0.001, nft: true }
-      ]
-    },
-    cheap: {
-      id: 'cheap', name: 'Мишка', price: 0.8, desc: 'Мишки и сердца', cls: 'cheap',
-      prizes: [
-        { name: 'Мишка', value: 0.12, chance: 38 },
-        { name: 'Сердце', value: 0.16, chance: 32 },
-        { name: '1 TON', value: 1, chance: 30 },
-        { name: 'Ice Cream', value: 560, chance: 0.001, nft: true },
-        { name: 'Top Hat', value: 740, chance: 0.001, nft: true }
-      ]
-    },
-    selected: {
-      id: 'selected', name: 'Nexven', price: 2.4, desc: 'Мишки и сердца', cls: 'sel',
-      prizes: [
-        { name: 'Мишка', value: 0.2, chance: 36 },
-        { name: 'Сердце', value: 0.28, chance: 30 },
-        { name: '1 TON', value: 1, chance: 34 },
-        { name: 'Genie Lamp', value: 890, chance: 0.001, nft: true },
-        { name: 'Crystal Ball', value: 1100, chance: 0.001, nft: true }
-      ]
-    },
-    vip: {
-      id: 'vip', name: 'Pepe', price: 8, desc: 'Мишки и сердца', cls: 'vip',
-      prizes: [
-        { name: 'Мишка', value: 0.4, chance: 34 },
-        { name: 'Сердце', value: 0.55, chance: 28 },
-        { name: '1 TON', value: 1, chance: 38 },
-        { name: 'Plush Pepe', value: 1600, chance: 0.001, nft: true },
-        { name: "Durov's Cap", value: 2400, chance: 0.001, nft: true }
-      ]
-    }
+    free: { id: 'free', name: 'Daily case', price: 0, desc: 'Раз в 24 часа', cls: 'free', prizes: [
+      { name: 'Мишка', value: 0.05, chance: 46 }, { name: 'Сердце', value: 0.08, chance: 34 }, { name: '1 TON', value: 1, chance: 20 },
+      { name: 'Plush Pepe', value: 900, chance: 0.001, nft: true }
+    ]},
+    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки и сердца', cls: 'cheap', prizes: [
+      { name: 'Мишка', value: 0.12, chance: 40 }, { name: 'Сердце', value: 0.16, chance: 32 }, { name: '1 TON', value: 1, chance: 28 },
+      { name: 'Ice Cream', value: 640, chance: 0.001, nft: true }
+    ]},
+    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши', cls: 'sel', prizes: [
+      { name: 'Мишка', value: 0.2, chance: 36 }, { name: 'Сердце', value: 0.3, chance: 30 }, { name: '1 TON', value: 1, chance: 34 },
+      { name: 'Crystal Ball', value: 1200, chance: 0.001, nft: true }
+    ]},
+    half: { id: 'half', name: '50|50 case', price: 5, desc: 'Мишка или NFT', cls: 'vip', prizes: [
+      { name: 'Мишка', value: 0.4, chance: 99.9 },
+      { name: 'Plush Pepe', value: 1600, chance: 0.1, nft: true }
+    ]},
+    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, мишки, сердца', cls: 'sel', prizes: [
+      { name: 'Мишка', value: 0.3, chance: 28 }, { name: 'Сердце', value: 0.4, chance: 24 }, { name: '1 TON', value: 1, chance: 22 },
+      { name: 'Homemade Cake', value: 2, chance: 16 }, { name: 'Berry Box', value: 2.4, chance: 10 },
+      { name: 'Candy Cane', value: 1800, chance: 0.001, nft: true }, { name: 'Ice Cream', value: 2100, chance: 0.001, nft: true }
+    ]}
   };
 
 
@@ -225,7 +196,7 @@
   }
 
   function roll(prizes) {
-    var pool = prizes.filter(function (p) { return !p.nft && p.chance > 0; });
+    var pool = prizes.filter(function (p) { return p.chance > 0 && (!p.nft || p.chance >= 0.05); });
     if (!pool.length) pool = prizes.filter(function (p) { return !p.nft; });
     var t = 0, i;
     for (i = 0; i < pool.length; i++) t += pool[i].chance;
@@ -590,11 +561,16 @@
     box.innerHTML = '<div class="empty">Leaderboard needs cloud sync. Your spent: ' + ((user && user.total_spent) || 0) + ' TON</div>';
   }
 
+  function refs() {
+    try { return JSON.parse(localStorage.getItem('nv_refs_' + user.id) || '[]'); } catch (e) { return []; }
+  }
   function renderProf() {
     var c = $('prof'); if (!c || !user) return;
     var av = user.photo_url ? '<img src="' + user.photo_url + '" alt="">' : ((user.first_name || '?')[0] || '?').toUpperCase();
     var adminBtn = '<button type="button" class="btn" id="btnOpenAdmin" style="margin-top:14px">Админ-панель</button>';
-    c.innerHTML = '<div class="bav">' + av + '</div><div class="pn">' + (user.first_name || 'Player') + '</div><div class="pid">ID: ' + user.id + (user.username ? ' · @' + user.username : '') + '</div><div class="ps"><div class="pst"><div class="pv">' + (user.balance || 0) + '</div><div class="pl">Balance</div></div><div class="pst"><div class="pv">' + (mode === 'cs2' ? (user.inventory_cs2 || []).length : (user.inventory || []).length) + '</div><div class="pl">Items</div></div><div class="pst"><div class="pv">' + (user.total_deposited || 0) + '</div><div class="pl">Deposited</div></div><div class="pst"><div class="pv">' + (user.total_spent || 0) + '</div><div class="pl">Spent</div></div></div>' + adminBtn;
+    var list = refs();
+    var rows = list.length ? list.map(function (r) { return '<div class="rowline"><span>' + r.name + '</span><b>' + r.earned + ' TON · 2%</b></div>'; }).join('') : '<div class="hint">Пока никого нет</div>';
+    c.innerHTML = '<div class="bav">' + av + '</div><div class="pn">' + (user.first_name || 'Player') + '</div><div class="pid">ID: ' + user.id + '</div><div class="refbox"><b>Приглашай друзей — 2% с пополнения</b><div class="hint">https://t.me/nexvendrop_bot?start=ref_' + user.id + '</div>' + rows + '<button type="button" class="btn" id="btnRef">Пригласить</button><a class="btn-o" href="https://t.me/nexvendropmananger" target="_blank">Поддержка</a></div>' + adminBtn;
     var top = $('topAdmin');
     if (top) top.onclick = function () { if (ba) ba.click(); };
     var ba = $('btnOpenAdmin');
@@ -1176,13 +1152,30 @@
         b.classList.add('on');
       };
     });
-    $('btnPayGo').onclick = function () {
-      var a = parseInt($('payAmt').value, 10) || 0;
-      if (a < 50) { toast('Min 50', 'error'); return; }
-      var bot = 'nexvendrop_bot';
-      if (tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/' + bot + '?start=pay_' + a);
-      else window.open('https://t.me/' + bot + '?start=pay_' + a, '_blank');
-      $('modPay').classList.remove('on');
+    document.querySelectorAll('[data-pay]').forEach(function (b) {
+      b.onclick = function () {
+        var kind = b.getAttribute('data-pay');
+        if (kind === 'ton' || kind === 'crypto' || kind === 'rub') { toast('Скоро', 'error'); return; }
+        document.querySelectorAll('[data-pay]').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        var box = $('payBox');
+        if (kind === 'stars') box.innerHTML = '<input id="payAmt" class="inp" value="50" /><button class="btn" id="btnPayGo">Оплатить Stars</button>';
+        if (kind === 'gift') box.innerHTML = '<button class="btn" id="giftBear">Мишка в инвентарь</button><button class="btn" id="giftHeart">Сердце в инвентарь</button>';
+        var go = $('btnPayGo');
+        if (go) go.onclick = function () {
+          var a = parseInt($('payAmt').value, 10) || 50;
+          if (tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/nexvendrop_bot?start=pay_' + a);
+          $('modPay').classList.remove('on');
+        };
+        var gb = $('giftBear'), gh = $('giftHeart');
+        if (gb) gb.onclick = function () { user.inventory.unshift({ id: Date.now(), name: 'Мишка', value: 0.1 }); save(); toast('Мишка в инвентаре', 'success'); $('modPay').classList.remove('on'); };
+        if (gh) gh.onclick = function () { user.inventory.unshift({ id: Date.now(), name: 'Сердце', value: 0.08 }); save(); toast('Сердце в инвентаре', 'success'); $('modPay').classList.remove('on'); };
+      };
+    });
+    var refBtn = $('btnRef');
+    if (refBtn) refBtn.onclick = function () {
+      var link = 'https://t.me/nexvendrop_bot?start=ref_' + user.id;
+      if (tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link));
     };
 
     $('arenaX').onclick = closeArena;
@@ -1291,6 +1284,21 @@
       _updated: 0
     };
     if (loc) unpack(loc, user);
+    try {
+      var sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+      if (sp && String(sp).indexOf('ref_') === 0) {
+        var inviter = String(sp).slice(4);
+        if (inviter && inviter !== String(user.id)) {
+          var key = 'nv_refs_' + inviter;
+          var arr = [];
+          try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+          if (!arr.some(function (r) { return String(r.id) === String(user.id); })) {
+            arr.push({ id: user.id, name: user.first_name || 'Друг', earned: 0 });
+            localStorage.setItem(key, JSON.stringify(arr));
+          }
+        }
+      }
+    } catch (e) {}
     if (!user.inventory_cs2) user.inventory_cs2 = [];
 
     prog(40, 'Cloud sync...');

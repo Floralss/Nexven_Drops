@@ -90,11 +90,11 @@
     return 'data:image/svg+xml,' + encodeURIComponent(s);
   }
   var GAME_IMG = {
-    roulette: frag('hangingstar'),
-    crash: frag('flyingbroom'),
-    upgrade: frag('tophat'),
-    plinko: frag('berrybox'),
-    pickaxe: frag('snowmittens')
+    roulette: 'img/roulette.svg',
+    crash: 'img/crash.svg',
+    upgrade: 'img/craft.svg',
+    plinko: 'img/plinko.svg',
+    pickaxe: 'img/mines.svg'
   };
 
 

@@ -330,12 +330,14 @@ body{background:#05060a}
 .banner small{position:absolute;left:14px;bottom:10px;color:#d7deea;font-size:12px}
 #app{padding-bottom:92px}
 
+.ld-plush{width:72px;height:72px;border-radius:24px;background:radial-gradient(circle at 40% 35%,#ffd0dc,#ff6f91 45%,#7c6cf0);animation:sp 1.2s ease-in-out infinite;box-shadow:0 0 24px #7c6cf0}
+.spin.on{background:#07090ff2}.spin-box{height:120px}.si{width:96px}.pays{display:flex;gap:6px;margin:10px 0}.pays button{flex:1;height:54px;border-radius:14px;border:0;background:#1c2433;color:#fff;font-weight:800}.pays button.on{background:#f0c14b;color:#111;box-shadow:0 0 12px #f0c14b}.pays button:disabled{opacity:.35}.paynote{background:#12382f;border-radius:12px;padding:10px;margin-top:8px}.refbox{margin-top:12px;padding:12px;border-radius:16px;background:#12382f}.btn{box-shadow:0 0 14px rgba(47,123,255,.45)}
 </style>
 </head>
 <body>
   <div id="loader">
     <div class="ld-ring"></div>
-    <div class="ld-title">NEXVEN DROPS</div>
+    <div class="ld-plush"></div><div class="ld-title">NEXVEN DROPS</div>
     <div class="ld-bar"><i id="ldFill"></i></div>
     <div class="ld-txt" id="ldTxt">Loading...</div>
   </div>
@@ -542,16 +544,16 @@ body{background:#05060a}
     <div class="mod" id="modPay">
       <div class="mod-b tl">
         <button type="button" class="mx" id="btnPayX">X</button>
-        <h3>Top up TON</h3>
-        <p class="hint">Real Telegram TON · min 50</p>
-        <div class="presets">
-          <button type="button" class="pre" data-a="50">50</button>
-          <button type="button" class="pre on" data-a="100">100</button>
-          <button type="button" class="pre" data-a="250">250</button>
-          <button type="button" class="pre" data-a="500">500</button>
+        <h3>Пополнение баланса</h3>
+        <div class="paynote">Пополняй через Telegram Stars или подарок. TON, Crypto и рубли закрыты.</div>
+        <div class="pays">
+          <button type="button" data-pay="ton" disabled>TON</button>
+          <button type="button" data-pay="crypto" disabled>Crypto</button>
+          <button type="button" data-pay="rub" disabled>RUB</button>
+          <button type="button" data-pay="stars" class="on">Stars</button>
+          <button type="button" data-pay="gift">Подарок</button>
         </div>
-        <input type="number" id="payAmt" value="100" min="50" class="inp" />
-        <button type="button" class="btn" id="btnPayGo">Pay</button>
+        <div id="payBox"><input id="payAmt" class="inp" value="50" /><button class="btn" id="btnPayGo">Оплатить Stars</button></div>
       </div>
     </div>
 
@@ -577,7 +579,7 @@ body{background:#05060a}
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="gifts.js"></script>
-  <script src="app.js"></script>
+  <script src="gifts.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
