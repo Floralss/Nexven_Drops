@@ -343,7 +343,7 @@
         if (g.id === 'roulette' || g.id === 'crash') openArena(g.id);
         else if (g.id === 'upgrade') openUpgrade();
         else if (g.id === 'plinko') openPlinko();
-        else if (g.id === 'pickaxe') openPickaxe();
+        else if (g.id === 'pickaxe') openMines();
       };
       box.appendChild(el);
     });
@@ -759,23 +759,21 @@
   }
 
   function renderUpBody() {
-    var inv = (user.inventory || []).filter(function (i) { return i.nft || i.value >= 15; });
-    var html = '<div class="hint">Select NFT / gift to upgrade</div><div class="up-inv">';
-    if (!inv.length) html += '<div class="empty">No items — open cases first</div>';
+    var inv = user.inventory || [];
+    var html = '<div class="craft-ring">Выберите предметы</div><div class="card"><div class="rowline"><b>Инвентарь</b><span>Открыть полный список</span></div>';
+    if (!inv.length) html += '<div class="empty">Инвентарь пуст. Откройте кейсы, чтобы получить предметы.</div>';
     inv.forEach(function (it, i) {
       var realIdx = user.inventory.indexOf(it);
       html += '<div class="up-item" data-i="' + realIdx + '"><img src="' + icon(it.name) + '"><div style="flex:1"><div class="in">' + it.name + '</div><div class="is">' + it.value + ' TON</div></div></div>';
     });
-    html += '</div>';
-    html += '<div class="hint">Multiplier</div><div class="up-mults">';
+    html += '</div></div><div class="hint">Множитель</div><div class="up-mults">';
     [1.5, 2, 3, 5].forEach(function (m) {
       html += '<button type="button" class="' + (upState.mult === m ? 'on' : '') + '" data-m="' + m + '">x' + m + '</button>';
     });
     html += '</div>';
     var chance = upState.mult ? Math.max(5, Math.floor(100 / upState.mult * 0.92)) : 0;
-    html += '<div class="up-chance" id="upChance">Chance: ' + chance + '%</div>';
-    html += '<div class="up-wheel-wrap"><div class="up-pin"></div><div class="up-wheel" id="upWheel" style="--pct:' + chance + '%"></div></div>';
-    html += '<button type="button" class="btn" id="upGo">Upgrade</button>';
+    html += '<div class="up-chance" id="upChance">Шанс: ' + chance + '%</div>';
+    html += '<button type="button" class="btn" id="upGo">Улучшить</button>';
     html += '<div class="hint" style="margin-top:8px">Lose → consolation 2% of item value in TON</div>';
     $('upBody').innerHTML = html;
 
@@ -877,7 +875,7 @@
       }
     }
     // bins
-    var mults = [0.2, 0.5, 1, 1.5, 3, 1.5, 1, 0.5, 0.2];
+    var mults = [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13];
     var binW = W / mults.length;
     mults.forEach(function (m, i) {
       ctx.fillStyle = m >= 3 ? '#2ee59d' : m >= 1 ? '#7c6cf0' : '#ff5c5c';
@@ -902,7 +900,7 @@
     var cv = $('plCanvas');
     var ctx = cv.getContext('2d');
     var W = cv.width, H = cv.height;
-    var mults = [0.2, 0.5, 1, 1.5, 3, 1.5, 1, 0.5, 0.2];
+    var mults = [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13];
     var x = W / 2, y = 20;
     var rows = 10, gap = 32, startY = 40;
     var row = 0;
@@ -910,7 +908,7 @@
     // precompute path with randomness
     var px = W / 2;
     for (var r = 0; r < rows; r++) {
-      px += (Math.random() < 0.5 ? -1 : 1) * (gap / 2);
+      px += (Math.random() < 0.72 ? (px > W / 2 ? -1 : 1) : (Math.random() < 0.5 ? -1 : 1)) * (gap / 2);
       path.push(px);
     }
     var step = 0;
@@ -966,6 +964,23 @@
     { name: 'Gold', cls: 'gold', reward: 2 }, { name: 'Diamond', cls: 'diamond', reward: 3.5 }
   ];
 
+  function openMines() {
+    var bombs = Array.from({ length: 25 }, function () { return Math.random() < 0.2; });
+    var html = '<div class="pick-title">Мины</div><div class="minegrid">';
+    bombs.forEach(function (_, i) { html += '<button type="button" data-m="' + i + '"></button>'; });
+    html += '</div>';
+    $('pickPhase1').innerHTML = html;
+    showPickPhase(1);
+    $('pickGame').classList.add('on');
+    $('pickPhase1').querySelectorAll('button').forEach(function (b) {
+      b.onclick = function () {
+        var i = Number(b.getAttribute('data-m'));
+        b.textContent = bombs[i] ? 'мина' : 'ок';
+        b.style.background = bombs[i] ? '#a33b3b' : '#1f8a62';
+        if (!bombs[i]) { user.balance = (user.balance || 0) + 0.02; save(); renderUser(); }
+      };
+    });
+  }
   function openPickaxe() {
     pickState = { bet: 25, pick: null, depth: 0, timer: null, stopped: false };
     $('pickBet').value = 25;
