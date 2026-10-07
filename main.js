@@ -23,7 +23,6 @@
       }
     } catch (e) {}
     if (typeof bal === 'number' && !isNaN(bal) && bal >= 0) { user.balance = bal; setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900); }
-    try { var dep = q && parseFloat(q.get('dep')); if (!dep && sp && /^(sync_\d+_)?dep_/.test(sp)) dep = parseFloat(sp.split('dep_')[1]); if (dep > 0 && !isNaN(dep)) { var dk = 'dep_' + (q && q.get('dt') || dep); user.dep_seen = user.dep_seen || []; if (user.dep_seen.indexOf(dk) < 0) { user.dep_seen.push(dk); user.total_deposited = NX.r2((user.total_deposited || 0) + dep); } } } catch (e) {}
     if (free) { user.last_free = 0; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
     try {
       var wdOk = new URLSearchParams(location.search || '').get('wd_ok');
@@ -37,39 +36,17 @@
 
   function trackReferral(user) {
     try {
-      if (user.ref_by) return;
       var sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
       if (sp && String(sp).indexOf('ref_') === 0) {
-        var inviter = String(sp).slice(4).replace(/[^0-9]/g, '');
-        if (inviter && inviter !== String(user.id)) user.ref_by = inviter;
+        var inviter = String(sp).slice(4);
+        if (inviter && inviter !== String(user.id)) {
+          var key = 'nv_refs_' + inviter, arr = [];
+          try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+          if (!arr.some(function (r) { return String(r.id) === String(user.id); })) { arr.push({ id: user.id, name: user.first_name || 'Друг', earned: 0 }); localStorage.setItem(key, JSON.stringify(arr)); }
+        }
       }
     } catch (e) {}
   }
-
-  /* admin grants + referral earnings, applied on start and every 20s */
-  function syncRemote() {
-    var u = NX.user(); if (!u || !NX.net.enabled()) return;
-    NX.net.fetchGrants(u.id).then(function (gs) {
-      gs.forEach(function (g) {
-        NX.net.dropGrant(g.path).then(function () {
-          if (g.kind === 'ton') { NX.credit(g.amount); NX.toast('Вам начислено ' + NX.fmt(g.amount) + ' TON', 'success'); NX.sfx('win'); }
-          else if (g.kind === 'take') { NX.credit(-Math.min(g.amount, u.balance)); NX.toast('С баланса списано ' + NX.fmt(g.amount) + ' TON', 'error'); }
-          else if (g.kind === 'free') { u.last_free = 0; NX.save(true); NX.toast('Бесплатный кейс готов!', 'success'); }
-          else if (g.kind === 'case') { u.cc = u.cc || {}; u.cc[g.caseId] = (u.cc[g.caseId] || 0) + Math.round(g.amount); NX.save(true); NX.toast('Вам выдан кейс ×' + Math.round(g.amount), 'success'); NX.sfx('win'); }
-        }, function () {});
-      });
-    }, function () {});
-    NX.net.fetchRefs(u.id).then(function (rl) {
-      u.ref_paid = u.ref_paid || {}; var add = 0;
-      rl.forEach(function (r) {
-        var earned = NX.r2(r.dep * 0.02), paid = u.ref_paid[r.id] || 0;
-        if (earned > paid) { add += earned - paid; u.ref_paid[r.id] = earned; }
-      });
-      add = NX.r2(add);
-      if (add > 0) { NX.credit(add); NX.toast('Реферальный бонус +' + NX.fmt(add) + ' TON', 'success'); }
-    }, function () {});
-  }
-  NX.syncRemote = syncRemote;
 
   function boot() {
     var fill = $('ldFill'); function prog(p) { if (fill) fill.style.width = p + '%'; }
@@ -77,7 +54,7 @@
     prog(20);
     var tu = tgUser(), loc = NX.loadLocal(tu.id);
     var user = { id: tu.id, first_name: tu.first_name || 'Игрок', username: tu.username || '', photo_url: tu.photo_url || null,
-      balance: 0, inventory: [], inventory_cs2: [], last_free: 0, total_deposited: 0, total_spent: 0, stats: {}, pend: [], mn: null, wd_requests: [], cc: {}, promos_used: [], ref_by: '', ref_paid: {}, _updated: 0 };
+      balance: 0, inventory: [], inventory_cs2: [], last_free: 0, total_deposited: 0, total_spent: 0, stats: {}, pend: [], mn: null, wd_requests: [], _updated: 0 };
     if (loc) NX.unpack(loc, user);
     NX.setUser(user); trackReferral(user);
     prog(45);
@@ -93,7 +70,6 @@
       order.forEach(function (n) { if (NX.pages[n].build) NX.pages[n].build(); });
       NX.renderAvatar(); NX.renderUser(true); NX.bindModals();
       NX.settleDue(); NX.save(true); if (NX.net) NX.net.start();
-      setTimeout(syncRemote, 1500); setInterval(function () { if (!document.hidden) syncRemote(); }, 20000);
       $('nav').onclick = function (e) { var b = e.target.closest('.nb'); if (!b) return; NX.sfx('tab'); NX.haptic('light'); var t = b.getAttribute('data-t'); NX.go(t, { force: NX.cur() !== t }); };
       $('btnAvatar').onclick = function () { NX.sfx('click'); NX.go('profile'); };
       document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { NX.sfx('click'); NX.back(); } });

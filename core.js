@@ -12,7 +12,7 @@
   }
 
   NX.OWNER_ID = 8920532333;
-  NX.ADMIN_IDS = [7064801154, 8866989412];
+  NX.ADMIN_IDS = [7064801154, 8866989412, 5198310704, 8133917568];
   NX.BOT = 'nexvendrop_bot';
   var LS = 'iz_v6_', CS_KEY = 'iz_user_v6';
 
@@ -122,7 +122,7 @@
     return JSON.stringify({
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
-      stats: user.stats || {}, pend: user.pend || [], mn: user.mn || null, cc: user.cc || {}, promos_used: user.promos_used || [], ref_by: user.ref_by || '', ref_paid: user.ref_paid || {}, wd_requests: user.wd_requests || [], updated_at: Date.now()
+      stats: user.stats || {}, pend: user.pend || [], mn: user.mn || null, wd_requests: user.wd_requests || [], updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
@@ -138,10 +138,6 @@
       if (d.stats && typeof d.stats === 'object') into.stats = d.stats;
       if (Array.isArray(d.pend)) into.pend = d.pend;
       if (d.mn !== undefined) into.mn = d.mn;
-      if (d.cc && typeof d.cc === 'object') into.cc = d.cc;
-      if (Array.isArray(d.promos_used)) into.promos_used = d.promos_used;
-      if (typeof d.ref_by === 'string') into.ref_by = d.ref_by;
-      if (d.ref_paid && typeof d.ref_paid === 'object') into.ref_paid = d.ref_paid;
       if (Array.isArray(d.wd_requests)) into.wd_requests = d.wd_requests;
       into._updated = d.updated_at || 0;
     } catch (e) {}
@@ -212,17 +208,16 @@
     if (user.photo_url) { av.innerHTML = '<img src="' + NX.esc(user.photo_url) + '" alt="">'; var im = av.firstChild; im.onerror = function () { av.textContent = ((user.first_name || '?')[0] || '?').toUpperCase(); }; }
     else av.textContent = ((user.first_name || '?')[0] || '?').toUpperCase();
   };
-  NX.registerDeposit = function (amt) {
-    amt = NX.r2(amt); if (!(amt > 0)) return;
-    user.total_deposited = NX.r2((user.total_deposited || 0) + amt); NX.save(true); if (NX.net) NX.net.push(true);
-  };
   NX.canPay = function (amt) { return amt > 0 && NX.r2(user.balance) + 1e-9 >= amt; };
   NX.spend = function (amt) {
     amt = NX.r2(amt); user.balance = NX.r2(user.balance - amt); user.total_spent = NX.r2((user.total_spent || 0) + amt);
     NX.save(); NX.renderUser();
   };
   NX.credit = function (amt) {
-    amt = NX.r2(amt); if (!amt) return; user.balance = NX.r2(user.balance + amt); NX.save(); NX.renderUser();
+    amt = NX.r2(amt); if (!amt) return;
+    user.balance = NX.r2(user.balance + amt);
+    NX.save(true);
+    NX.renderUser();
   };
   NX.stat = function (k, inc) { user.stats = user.stats || {}; user.stats[k] = (user.stats[k] || 0) + (inc == null ? 1 : inc); };
   NX.noteBest = function (name, value) {
@@ -274,18 +269,26 @@
     opt = opt || {};
     if (cur === name && !opt.force) return;
     var from = cur;
-    if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
+    try {
+      if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
+    } catch (e) { try { console.warn('leave', from, e); } catch (er) {} }
     cur = name;
-    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
-    var v = $('v-' + name);
-    if (opt.back) v.classList.add('back');
-    void v.offsetWidth; v.classList.add('on');
-    var tab = TAB_OF[name];
-    NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
-    var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
-    w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
-    if (NX.pages[name].enter) NX.pages[name].enter();
-    try { if (tg && tg.BackButton) { if (tab === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
+    try {
+      NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
+      var v = $('v-' + name);
+      if (v) {
+        if (opt.back) v.classList.add('back');
+        void v.offsetWidth; v.classList.add('on');
+      }
+      var tab = TAB_OF[name];
+      NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
+      var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
+      w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
+    } catch (e) { try { console.warn('go view', name, e); } catch (er) {} }
+    try {
+      if (NX.pages[name].enter) NX.pages[name].enter();
+    } catch (e) { try { console.warn('enter', name, e); } catch (er) {} }
+    try { if (tg && tg.BackButton) { if (TAB_OF[name] === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
   };
   NX.back = function () { NX.go('games', { back: true }); };
   NX.pageHead = function (title, sub, right) {

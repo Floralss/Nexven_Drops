@@ -97,66 +97,20 @@
         '<div class="pst"><small>Открыто кейсов</small><b>' + ((u.stats && u.stats.opened) || 0) + '</b></div><div class="pst"><small>Предметов</small><b>' + invCount + '</b></div></div>' +
         '<div class="sec" style="display:flex;justify-content:space-between;align-items:baseline">Инвентарь<span class="hint">' + (invCount ? NX.fmt(invSum) + ' TON' : '') + '</span></div><div id="profInv"></div>' +
         '<div class="refbox"><b style="font-size:16px">Приглашай друзей — 2% с пополнения</b><div class="lnk">' + link + '</div>' +
-        '<div id="refList">' + (rl.length ? rl.map(function (r) { return '<div class="rrow"><span>' + NX.esc(r.name) + '</span><b>' + NX.fmt(r.earned) + ' TON · 2%</b></div>'; }).join('') : '<div class="hint" style="margin-bottom:6px">Загрузка…</div>') + '</div><div style="height:10px"></div>' +
+        (rl.length ? rl.map(function (r) { return '<div class="rrow"><span>' + NX.esc(r.name) + '</span><b>' + NX.fmt(r.earned) + ' TON · 2%</b></div>'; }).join('') + '<div style="height:10px"></div>' : '<div class="hint" style="margin-bottom:12px">Пока никого нет</div>') +
         '<button type="button" class="btn green" id="btnRef">Пригласить</button><a class="btn ghost" id="btnSupport" href="https://t.me/nexvendropmananger" target="_blank" rel="noopener" style="margin-top:10px">Поддержка</a></div>' +
-        '<div class="card" style="margin-top:12px"><b style="font-size:16px">Промокод</b><div style="display:flex;gap:8px;margin-top:10px"><input id="promoIn" class="inp" style="margin:0;flex:1" placeholder="Введите промокод" autocapitalize="characters" /><button type="button" class="btn" id="promoGo" style="width:auto;padding:0 18px">OK</button></div></div>' +
         '<div class="card" style="margin-top:12px"><div class="sw-row"><span>Звуки</span><label class="sw"><input type="checkbox" id="sndOn"' + (NX.isMuted() ? '' : ' checked') + '><i></i></label></div></div>' +
         (staff ? '<button type="button" class="btn gold" id="btnOpenAdmin" style="margin-top:12px">Админ-панель</button>' : '');
       NX.invGrid($('profInv'), u.inventory || [], { onTap: NX.showItem });
-      loadRefs(u); $('promoGo').onclick = redeemPromo;
-
       $('btnRef').onclick = function () { try { if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link)); else if (navigator.clipboard) { navigator.clipboard.writeText(link); NX.toast('Ссылка скопирована', 'success'); } } catch (e) {} };
       $('sndOn').onchange = function () { NX.setMuted(!this.checked); NX.haptic('select'); };
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
         $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать и забирать TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
-        NX.open('modAdmin'); if (NX.admRefreshPromos) NX.admRefreshPromos();
+        NX.open('modAdmin');
       };
     }
   };
-
-
-  /* ===== referrals (shared via Firestore) ===== */
-  function loadRefs(u) {
-    var box = $('refList'); if (!box) return;
-    if (!NX.net.enabled()) { box.innerHTML = '<div class="hint" style="margin-bottom:6px">Пока никого нет</div>'; return; }
-    NX.net.fetchRefs(u.id).then(function (rl) {
-      box = $('refList'); if (!box || NX.cur() !== 'profile') return;
-      if (!rl.length) { box.innerHTML = '<div class="hint" style="margin-bottom:6px">Пока никого нет. Отправь ссылку другу</div>'; return; }
-      rl.sort(function (a, b) { return b.dep - a.dep; });
-      var total = 0;
-      var rows = rl.map(function (r) { var e = NX.r2(r.dep * 0.02); total += e; return '<div class="rrow"><span>' + NX.esc(r.name) + '<small style="display:block;color:var(--m);font-weight:600">пополнил ' + NX.fmt(r.dep) + ' TON</small></span><b>+' + NX.fmt(e) + ' TON</b></div>'; }).join('');
-      box.innerHTML = '<div class="rrow" style="border-top:0"><span>Друзей: ' + rl.length + '</span><b style="color:#2be3a0">Всего: ' + NX.fmt(total) + ' TON</b></div>' + rows;
-    }, function () { box = $('refList'); if (box) box.innerHTML = '<div class="hint">Не удалось загрузить рефералов</div>'; });
-  }
-
-  /* ===== promo codes ===== */
-  function redeemPromo() {
-    var u = NX.user(), code = String($('promoIn').value || '').trim().toUpperCase();
-    if (!code) { NX.toast('Введите промокод', 'error'); return; }
-    if (!NX.net.enabled()) { NX.toast('Промокоды недоступны (нет Firebase)', 'error'); return; }
-    if ((u.promos_used || []).indexOf(code) >= 0) { NX.toast('Вы уже активировали этот промокод', 'error'); NX.haptic('error'); return; }
-    var btn = $('promoGo'); btn.disabled = true;
-    NX.net.getPromo(code).then(function (pr) {
-      if (!pr) throw new Error('Промокод не найден');
-      if (pr.exp && Date.now() > pr.exp) throw new Error('Срок промокода истёк');
-      if (pr.max > 0 && pr.used >= pr.max) throw new Error('Промокод закончился');
-      return NX.net.usePromo(code).then(function () { return pr; });
-    }).then(function (pr) {
-      u.promos_used = (u.promos_used || []).concat([code]);
-      var msg = '';
-      if (pr.kind === 'ton') { NX.credit(pr.amount); msg = '+' + NX.fmt(pr.amount) + ' TON'; }
-      else if (pr.kind === 'case') {
-        u.cc = u.cc || {}; var n = Math.max(1, Math.round(pr.amount)); u.cc[pr.caseId] = (u.cc[pr.caseId] || 0) + n;
-        var cs = NX.CASES[pr.caseId]; msg = 'Кейс ' + (cs ? cs.name : pr.caseId) + ' ×' + n;
-      } else if (pr.kind === 'gift') {
-        var gi = window.giftInfo(pr.gift); NX.addItem({ name: pr.gift, value: gi.value, nft: gi.nft }); msg = 'Подарок: ' + pr.gift;
-      }
-      NX.save(true); $('promoIn').value = ''; btn.disabled = false;
-      NX.toast('Промокод активирован: ' + msg, 'success'); NX.sfx('win'); NX.haptic('success'); NX.confetti(.7);
-      if (NX.cur() === 'profile') NX.pages.profile.enter();
-    }).catch(function (e) { btn.disabled = false; NX.toast(e && e.message && e.message.indexOf('http') < 0 ? e.message : 'Ошибка сети, попробуйте ещё раз', 'error'); NX.haptic('error'); });
-  }
 
   /* ===== deposit ===== */
   function payBox(kind) {
@@ -178,69 +132,56 @@
       b.onclick = function () { NX.qa('#pays button').forEach(function (x) { x.classList.toggle('on', x === b); }); payBox(k); NX.haptic('select'); };
     });
 
-    /* admin (same rules as before) */
+    /* admin */
     var u = function () { return NX.user(); };
     $('btnAdmGive').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Выдавать может только владелец', 'error'); return; }
-      var tid = parseInt($('admId').value, 10), amt = parseFloat($('admAmt').value);
-      if (!tid || isNaN(amt)) { NX.toast('Нужны ID и сумма', 'error'); return; }
-      if (tid === u().id) { NX.credit(amt); $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON'; NX.sfx('win'); NX.toast('Баланс обновлён', 'success'); }
-      else if (NX.net.enabled()) { NX.net.sendGrant(tid, { kind: 'ton', amount: amt }).then(function () { $('admRes').textContent = 'Отправлено игроку ' + tid + ': +' + NX.fmt(amt) + ' TON (придёт, когда он откроет приложение)'; NX.toast('Выдано', 'success'); }, function () { NX.toast('Ошибка Firebase', 'error'); }); }
-      else { $('admRes').textContent = 'Нужен Firebase в config.js'; NX.toast('Нужен Firebase', 'error'); }
+      var tid = parseInt($('admId').value, 10), amt = parseFloat(String($('admAmt').value).replace(',', '.'));
+      if (!tid || isNaN(amt) || amt === 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
+      if (tid === u().id) {
+        NX.credit(amt);
+        NX.save(true);
+        $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON';
+        NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
+        return;
+      }
+      if (!NX.net || !NX.net.enabled()) {
+        $('admRes').textContent = 'Для выдачи другим нужен Firebase: впиши projectId и apiKey в config.js';
+        NX.toast('Firebase не настроен', 'error');
+        return;
+      }
+      $('admRes').textContent = 'Отправляем…';
+      NX.net.grant(tid, amt, function (err) {
+        if (err) {
+          $('admRes').textContent = 'Ошибка Firebase. Создай Firestore в консоли (см. FIREBASE_RULES.txt) или выдай через бота: /start → Admin → Give TON';
+          NX.toast('Firebase недоступен — выдай через бота', 'error');
+        } else {
+          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON игроку ' + tid + '. Он получит при следующем заходе.';
+          NX.sfx('win'); NX.toast('Выдано', 'success');
+        }
+      });
     };
     $('btnAdmTake').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Забирать может только владелец', 'error'); return; }
-      var amt = parseFloat($('admAmt').value) || 0;
-      var tid2 = parseInt($('admId').value, 10);
-      if (tid2 === u().id) { NX.credit(-Math.min(amt, u().balance)); $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON'; }
-      else if (tid2 && NX.net.enabled()) { NX.net.sendGrant(tid2, { kind: 'take', amount: amt }).then(function () { $('admRes').textContent = 'Списание отправлено игроку ' + tid2; NX.toast('Готово', 'success'); }, function () { NX.toast('Ошибка Firebase', 'error'); }); }
+      var amt = parseFloat(String($('admAmt').value).replace(',', '.')) || 0;
+      var tid = parseInt($('admId').value, 10);
+      if (tid === u().id) {
+        NX.credit(-Math.min(Math.abs(amt), u().balance));
+        NX.save(true);
+        $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON';
+      } else {
+        NX.toast('Забирать у других можно только себе', 'error');
+      }
     };
     $('btnAdmFree').onclick = function () {
       if (!NX.isStaff()) return;
-      if (parseInt($('admId').value, 10) === u().id) { u().last_free = 0; NX.save(true); $('admRes').textContent = 'Бесплатный кейс сброшен'; NX.toast('Бесплатный кейс готов', 'success'); }
-      else if (NX.net.enabled()) { NX.net.sendGrant(parseInt($('admId').value, 10), { kind: 'free' }).then(function () { $('admRes').textContent = 'Бесплатный кейс сброшен игроку'; NX.toast('Готово', 'success'); }, function () { NX.toast('Ошибка Firebase', 'error'); }); }
-      else NX.toast('Нужен Firebase в config.js', 'error');
+      var tid = parseInt($('admId').value, 10);
+      if (tid === u().id) {
+        u().last_free = 0; NX.save(true);
+        $('admRes').textContent = 'Бесплатный кейс сброшен';
+        NX.toast('Бесплатный кейс готов', 'success');
+      } else NX.toast('Сброс free-кейса только для себя', 'error');
     };
-    bindPromoAdmin();
-  }
-
-  function bindPromoAdmin() {
-    var kind = $('pmKind'), cs = $('pmCase'), gf = $('pmGift');
-    cs.innerHTML = Object.keys(NX.CASES).filter(function (k) { return k !== 'free'; }).map(function (k) { return '<option value="' + k + '">' + NX.esc(NX.CASES[k].name) + '</option>'; }).join('');
-    gf.innerHTML = Object.keys(window.GIFTS).map(function (k) { return '<option value="' + NX.esc(k) + '">' + NX.esc(k) + '</option>'; }).join('');
-    function sync() {
-      var k = kind.value;
-      $('pmCaseWrap').classList.toggle('hide', k !== 'case'); $('pmGiftWrap').classList.toggle('hide', k !== 'gift'); $('pmAmtWrap').classList.toggle('hide', k === 'gift');
-      $('pmAmtLbl').textContent = k === 'case' ? 'Сколько открытий' : 'Сколько TON';
-    }
-    kind.onchange = sync; sync();
-    function list() {
-      if (!NX.net.enabled()) { $('pmList').textContent = 'Промокоды работают только с Firebase (config.js)'; return; }
-      NX.net.listPromos().then(function (ps) {
-        $('pmList').innerHTML = ps.length ? ps.map(function (x) {
-          var what = x.kind === 'ton' ? NX.fmt(x.amount) + ' TON' : x.kind === 'case' ? 'кейс ' + x.caseId + ' ×' + x.amount : x.gift;
-          return '<div class="rrow"><span>' + NX.esc(x.code) + ' · ' + NX.esc(what) + '<small style="display:block;color:var(--m)">' + x.used + (x.max ? '/' + x.max : '') + ' акт.' + (x.exp ? ' · до ' + new Date(x.exp).toLocaleDateString('ru-RU') : '') + '</small></span><button type="button" class="btn ghost sm" data-pmdel="' + NX.esc(x.code) + '" style="width:auto;padding:6px 12px">✕</button></div>';
-        }).join('') : 'Промокодов пока нет';
-      }, function () { $('pmList').textContent = 'Не удалось загрузить список'; });
-    }
-    $('pmList').onclick = function (e) { var b = e.target.closest('[data-pmdel]'); if (!b) return; NX.net.deletePromo(b.getAttribute('data-pmdel')).then(list, function () { NX.toast('Ошибка', 'error'); }); };
-    $('btnPmCreate').onclick = function () {
-      if (!NX.isOwner()) { NX.toast('Промокоды создаёт владелец', 'error'); return; }
-      if (!NX.net.enabled()) { NX.toast('Нужен Firebase в config.js', 'error'); return; }
-      var code = String($('pmCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, ''), k = kind.value, amt = parseFloat($('pmAmt').value) || 0;
-      if (code.length < 3) { NX.toast('Код минимум 3 символа (A-Z, 0-9)', 'error'); return; }
-      if (k !== 'gift' && amt <= 0) { NX.toast('Укажите количество', 'error'); return; }
-      var days = parseInt($('pmDays').value, 10) || 0;
-      NX.net.createPromo({ code: code, kind: k, amount: k === 'gift' ? 0 : amt, caseId: k === 'case' ? cs.value : '', gift: k === 'gift' ? gf.value : '', max: parseInt($('pmMax').value, 10) || 0, exp: days > 0 ? Date.now() + days * 86400000 : 0 })
-        .then(function () { NX.toast('Промокод ' + code + ' создан', 'success'); NX.sfx('win'); $('pmCode').value = ''; list(); }, function () { NX.toast('Ошибка Firebase', 'error'); });
-    };
-    $('btnPmGrant').onclick = function () {
-      if (!NX.isOwner()) { NX.toast('Только владелец', 'error'); return; }
-      var tid = parseInt($('admId').value, 10), n = parseFloat($('pmAmt').value) || 1;
-      if (!tid || !NX.net.enabled()) { NX.toast('Нужны ID игрока и Firebase', 'error'); return; }
-      NX.net.sendGrant(tid, { kind: 'case', amount: n, caseId: cs.value }).then(function () { NX.toast('Кейсы выданы', 'success'); }, function () { NX.toast('Ошибка Firebase', 'error'); });
-    };
-    NX.admRefreshPromos = list;
   }
   NX.bindModals = bindModals;
 })(window.NX);
