@@ -63,9 +63,9 @@
       rows.sort(function (a, b) { return b.spent - a.spent; });
       head.innerHTML = '<i class="dot"></i>Онлайн: <b>' + Math.max(res.online, 1) + '</b><span class="tot">Игроков: ' + rows.length + '</span>';
       box.innerHTML = rowsHtml(rows, u);
-    }).catch(function () {
+    }).catch(function (err) {
       if (NX.cur() !== 'top') return;
-      if (first) box.innerHTML = '<div class="empty">Не удалось загрузить рейтинг.<br><button type="button" class="btn sm ghost" id="lbRetry" style="margin-top:12px;max-width:200px">Повторить</button></div>';
+      if (first) box.innerHTML = '<div class="empty">Не удалось загрузить рейтинг' + (NX.isStaff() ? ' (' + NX.esc((err && err.message) || 'сеть') + '). Проверь projectId/apiKey и правила Firestore.' : '.') + '<br><button type="button" class="btn sm ghost" id="lbRetry" style="margin-top:12px;max-width:200px">Повторить</button></div>';
       var rb = $('lbRetry'); if (rb) rb.onclick = function () { loadBoard(true); };
     });
   }
@@ -106,8 +106,9 @@
       $('sndOn').onchange = function () { NX.setMuted(!this.checked); NX.haptic('select'); };
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
-        $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать и забирать TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
-        NX.open('modAdmin');
+        $('admRole').textContent = NX.isOwner() ? 'Владелец: выдача и снятие TON, выдача админки' : 'Админ: можно сбрасывать бесплатный кейс, выдавать TON нельзя';
+        ['btnAdmGive', 'btnAdmTake', 'btnAdmAdd', 'btnAdmDel'].forEach(function (id) { $(id).style.display = NX.isOwner() ? '' : 'none'; });
+        NX.open('modAdmin'); if (NX.refreshAdmins) NX.refreshAdmins();
       };
     }
   };
@@ -132,55 +133,53 @@
       b.onclick = function () { NX.qa('#pays button').forEach(function (x) { x.classList.toggle('on', x === b); }); payBox(k); NX.haptic('select'); };
     });
 
-    /* admin */
+    /* admin panel: self = instant; other players = Firestore "grants" delivered within ~12s */
     var u = function () { return NX.user(); };
+    function res(t) { $('admRes').textContent = t; }
+    function target() { var t = parseInt($('admId').value, 10); return t > 0 ? t : 0; }
+    function needNet() { if (NX.net.enabled()) return false; NX.toast('Firebase не настроен (config.js)', 'error'); res('Для выдачи другим игрокам впиши projectId и apiKey Firebase в config.js'); return true; }
+    function sendTo(tid, type, amt, okText) {
+      if (needNet()) return;
+      res('Отправляю…');
+      NX.net.sendGrant(tid, type, amt).then(function () { res(okText); NX.toast('Отправлено', 'success'); NX.sfx('win'); },
+        function (e) { res('Ошибка ' + ((e && e.message) || '') + '. Проверь правила Firestore (FIREBASE_RULES.txt)'); NX.toast('Не удалось отправить', 'error'); });
+    }
+    function refreshAdmins() {
+      var box = $('admList'); if (!box || !NX.isOwner() || !NX.net.enabled()) { if (box) box.textContent = ''; return; }
+      NX.net.listAdmins().then(function (ids) { box.textContent = ids.length ? 'Выданные админки: ' + ids.join(', ') : 'Выданных админок пока нет'; }, function () {});
+    }
+    NX.refreshAdmins = refreshAdmins;
     $('btnAdmGive').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Выдавать может только владелец', 'error'); return; }
-      var tid = parseInt($('admId').value, 10), amt = parseFloat(String($('admAmt').value).replace(',', '.'));
-      if (!tid || isNaN(amt) || amt === 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
-      if (tid === u().id) {
-        NX.credit(amt);
-        NX.save(true);
-        $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON';
-        NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
-        return;
-      }
-      if (!NX.net || !NX.net.enabled()) {
-        $('admRes').textContent = 'Для выдачи другим нужен Firebase: впиши projectId и apiKey в config.js';
-        NX.toast('Firebase не настроен', 'error');
-        return;
-      }
-      $('admRes').textContent = 'Отправляем…';
-      NX.net.grant(tid, amt, function (err) {
-        if (err) {
-          $('admRes').textContent = 'Ошибка: ' + (err.message || err);
-          NX.toast('Не удалось выдать', 'error');
-        } else {
-          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON игроку ' + tid + '. Он получит при следующем заходе.';
-          NX.sfx('win'); NX.toast('Выдано', 'success');
-        }
-      });
+      var tid = target(), amt = parseFloat($('admAmt').value);
+      if (!tid || isNaN(amt) || amt <= 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { NX.credit(amt); NX.save(true); res('Готово. Баланс ' + NX.fmt(u().balance) + ' TON'); NX.sfx('win'); NX.toast('Баланс обновлён', 'success'); }
+      else sendTo(tid, 'ton', amt, 'Выдано +' + NX.fmt(amt) + ' TON игроку ' + tid + '. Придёт, когда он откроет приложение.');
     };
     $('btnAdmTake').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Забирать может только владелец', 'error'); return; }
-      var amt = parseFloat(String($('admAmt').value).replace(',', '.')) || 0;
-      var tid = parseInt($('admId').value, 10);
-      if (tid === u().id) {
-        NX.credit(-Math.min(Math.abs(amt), u().balance));
-        NX.save(true);
-        $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON';
-      } else {
-        NX.toast('Забирать у других можно только себе', 'error');
-      }
+      var tid = target(), amt = parseFloat($('admAmt').value);
+      if (!tid || isNaN(amt) || amt <= 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { NX.credit(-Math.min(amt, u().balance)); NX.save(true); res('Забрано. Баланс ' + NX.fmt(u().balance) + ' TON'); }
+      else sendTo(tid, 'ton', -amt, 'Заберём ' + NX.fmt(amt) + ' TON у игрока ' + tid + ' при его следующем входе.');
     };
     $('btnAdmFree').onclick = function () {
       if (!NX.isStaff()) return;
-      var tid = parseInt($('admId').value, 10);
-      if (tid === u().id) {
-        u().last_free = 0; NX.save(true);
-        $('admRes').textContent = 'Бесплатный кейс сброшен';
-        NX.toast('Бесплатный кейс готов', 'success');
-      } else NX.toast('Сброс free-кейса только для себя', 'error');
+      var tid = target(); if (!tid) { NX.toast('Нужен ID', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { u().last_free = 0; NX.save(true); res('Бесплатный кейс сброшен'); NX.toast('Бесплатный кейс готов', 'success'); }
+      else sendTo(tid, 'free', 0, 'Бесплатный кейс игрока ' + tid + ' будет сброшен.');
+    };
+    $('btnAdmAdd').onclick = function () {
+      if (!NX.isOwner()) { NX.toast('Только владелец', 'error'); return; }
+      var tid = target(); if (!tid) { NX.toast('Нужен ID', 'error'); return; }
+      if (needNet()) return;
+      NX.net.setAdmin(tid, true).then(function () { res('Игрок ' + tid + ' теперь админ (после перезахода)'); NX.toast('Админка выдана', 'success'); refreshAdmins(); }, function () { res('Ошибка. Проверь правила Firestore'); NX.toast('Не удалось', 'error'); });
+    };
+    $('btnAdmDel').onclick = function () {
+      if (!NX.isOwner()) { NX.toast('Только владелец', 'error'); return; }
+      var tid = target(); if (!tid) { NX.toast('Нужен ID', 'error'); return; }
+      if (needNet()) return;
+      NX.net.setAdmin(tid, false).then(function () { res('У игрока ' + tid + ' забрана админка'); NX.toast('Админка снята', 'success'); refreshAdmins(); }, function () { res('Ошибка. Проверь правила Firestore'); NX.toast('Не удалось', 'error'); });
     };
   }
   NX.bindModals = bindModals;

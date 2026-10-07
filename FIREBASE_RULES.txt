@@ -1,4 +1,5 @@
-В Firebase Console -> Firestore -> Rules -> Publish:
+Firebase Console -> Build -> Firestore Database -> Create database (режим Production, любой регион).
+Потом вкладка Rules -> вставь и нажми Publish:
 
 rules_version = '2';
 service cloud.firestore {
@@ -9,17 +10,9 @@ service cloud.firestore {
   }
 }
 
-Без этого НЕ работают:
-- общий лидерборд
-- онлайн
-- выдача TON другим игрокам из админ-панели (коллекция grants)
+Используемые коллекции создаются сами:
+  players/{id}  - топ, онлайн и резервная копия баланса/инвентаря
+  grants/{auto} - выдачи TON и сброс бесплатного кейса другим игрокам
+  admins/{id}   - выданные админки
 
-Как подключить:
-1. Создай проект в console.firebase.google.com
-2. Firestore Database -> Create (production или test mode)
-3. Project settings -> General -> скопируй projectId и Web API Key
-4. Впиши их в config.js:
-   projectId: 'твой-project-id',
-   apiKey: 'AIza...'
-5. Опубликуй rules выше
-6. Задеплой сайт заново
+Без этих шагов выдача другим игрокам, админки, топ и онлайн НЕ РАБОТАЮТ.

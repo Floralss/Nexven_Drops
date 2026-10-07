@@ -114,6 +114,7 @@
   NX.isStaff = function () {
     if (!user) return false;
     if (NX.sameId(user.id, NX.OWNER_ID)) return true;
+    if (NX.dynAdmin) return true;
     return NX.ADMIN_IDS.some(function (id) { return NX.sameId(user.id, id); });
   };
   NX.isOwner = function () { return user && NX.sameId(user.id, NX.OWNER_ID); };
@@ -122,7 +123,7 @@
     return JSON.stringify({
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
-      stats: user.stats || {}, pend: user.pend || [], mn: user.mn || null, wd_requests: user.wd_requests || [], updated_at: Date.now()
+      stats: user.stats || {}, pend: user.pend || [], mn: user.mn || null, wd_requests: user.wd_requests || [], sync_seen: user.sync_seen == null ? null : user.sync_seen, updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
@@ -139,6 +140,7 @@
       if (Array.isArray(d.pend)) into.pend = d.pend;
       if (d.mn !== undefined) into.mn = d.mn;
       if (Array.isArray(d.wd_requests)) into.wd_requests = d.wd_requests;
+      if (typeof d.sync_seen === 'number') into.sync_seen = d.sync_seen;
       into._updated = d.updated_at || 0;
     } catch (e) {}
     return into;
@@ -149,7 +151,7 @@
   NX.cloudSave = function () {
     saveLocal();
     if (!tg || !tg.CloudStorage) return;
-    try { tg.CloudStorage.setItem(CS_KEY, pack(), function () {}); } catch (e) {}
+    try { var p = pack(); if (p.length < 4000) tg.CloudStorage.setItem(CS_KEY, p, function () {}); } catch (e) {}
   };
   NX.cloudLoad = function (cb) {
     if (!tg || !tg.CloudStorage) { cb(null); return; }
@@ -165,7 +167,7 @@
   };
   var saveT = null;
   NX.save = function (now) {
-    saveLocal(); touchLb(); if (NX.net) NX.net.push();
+    saveLocal(); touchLb(); if (NX.net) NX.net.push(!!now);
     if (now) { NX.cloudSave(); return; }
     clearTimeout(saveT); saveT = setTimeout(NX.cloudSave, 600);
   };
@@ -214,10 +216,7 @@
     NX.save(); NX.renderUser();
   };
   NX.credit = function (amt) {
-    amt = NX.r2(amt); if (!amt) return;
-    user.balance = NX.r2(user.balance + amt);
-    NX.save(true);
-    NX.renderUser();
+    amt = NX.r2(amt); if (!amt) return; user.balance = NX.r2(user.balance + amt); NX.save(); NX.renderUser();
   };
   NX.stat = function (k, inc) { user.stats = user.stats || {}; user.stats[k] = (user.stats[k] || 0) + (inc == null ? 1 : inc); };
   NX.noteBest = function (name, value) {
@@ -269,26 +268,19 @@
     opt = opt || {};
     if (cur === name && !opt.force) return;
     var from = cur;
-    try {
-      if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
-    } catch (e) { try { console.warn('leave', from, e); } catch (er) {} }
+    try { if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave(); } catch (e) {}
+    ['shCase', 'modItem', 'modInfo', 'modPay', 'modAdmin'].forEach(function (id) { var el = $(id); if (el) el.classList.remove('on'); });
     cur = name;
-    try {
-      NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
-      var v = $('v-' + name);
-      if (v) {
-        if (opt.back) v.classList.add('back');
-        void v.offsetWidth; v.classList.add('on');
-      }
-      var tab = TAB_OF[name];
-      NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
-      var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
-      w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
-    } catch (e) { try { console.warn('go view', name, e); } catch (er) {} }
-    try {
-      if (NX.pages[name].enter) NX.pages[name].enter();
-    } catch (e) { try { console.warn('enter', name, e); } catch (er) {} }
-    try { if (tg && tg.BackButton) { if (TAB_OF[name] === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
+    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'rev'); });
+    var v = $('v-' + name);
+    if (opt.back) v.classList.add('rev');
+    void v.offsetWidth; v.classList.add('on');
+    var tab = TAB_OF[name];
+    NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
+    var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
+    w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
+    try { if (NX.pages[name].enter) NX.pages[name].enter(); } catch (e) { try { console.error(e); } catch (x) {} }
+    try { if (tg && tg.BackButton) { if (tab === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
   };
   NX.back = function () { NX.go('games', { back: true }); };
   NX.pageHead = function (title, sub, right) {

@@ -4,64 +4,43 @@
   var $ = NX.$, ART = window.ART;
 
   /* ===== CASE DATA (names / prices / odds unchanged) ===== */
+  /* helper: prize taken from the gifts catalogue (value comes from gifts.js) */
+  function gp(name, chance) { var g = window.GIFTS[name] || {}; return { name: name, value: g.value || 10, chance: chance, nft: !!g.nft }; }
   var CASES = {
     free: { id: 'free', name: 'Daily case', price: 0, desc: 'Раз в 24 часа', prizes: [
-      { name: 'Мишка', value: 0.05, chance: 40 }, { name: 'Сердце', value: 0.08, chance: 30 }, { name: '1 TON', value: 1, chance: 22 },
-      { name: 'Крошка', value: 0.05, chance: 6 }, { name: 'Наклейка', value: 0.05, chance: 1.9 },
-      { name: 'Plush Pepe', value: 900, chance: 0.04, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.03, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.02, nft: true },
-      { name: 'Astral Shard', value: 800, chance: 0.01, nft: true }
+      { name: 'Мишка', value: 0.05, chance: 46 }, { name: 'Сердце', value: 0.08, chance: 34 }, { name: '1 TON', value: 1, chance: 20 },
+      { name: 'Plush Pepe', value: 900, chance: 0.001, nft: true }
     ] },
-    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки и сердца', prizes: [
-      { name: 'Мишка', value: 0.12, chance: 34 }, { name: 'Сердце', value: 0.16, chance: 28 }, { name: '1 TON', value: 1, chance: 24 },
-      { name: 'Toy Bear', value: 15, chance: 8 }, { name: 'Eternal Rose', value: 25, chance: 4.5 },
-      { name: 'Ice Cream', value: 505, chance: 0.5, nft: true },
-      { name: 'Santa Hat', value: 500, chance: 0.4, nft: true },
-      { name: 'Snow Mittens', value: 500, chance: 0.3, nft: true },
-      { name: 'Jack-in-the-Box', value: 500, chance: 0.2, nft: true },
-      { name: 'Top Hat', value: 530, chance: 0.1, nft: true }
+    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки, сердца и редкие NFT', prizes: [
+      { name: 'Мишка', value: 0.12, chance: 40 }, { name: 'Сердце', value: 0.16, chance: 32 }, { name: '1 TON', value: 1, chance: 28 },
+      { name: 'Крошка', value: 0.05, chance: 6 }, { name: 'Наклейка', value: 0.05, chance: 6 }, { name: '2 TON', value: 2, chance: 1.2 },
+      gp('Toy Bear', 0.08), gp('Eternal Rose', 0.04),
+      { name: 'Ice Cream', value: 640, chance: 0.001, nft: true },
+      gp('Top Hat', 0.001), gp('Hypno Lollipop', 0.001), gp('Jester Hat', 0.001), gp('Snow Mittens', 0.001), gp('Santa Hat', 0.001), gp('Witch Hat', 0.001), gp('Evil Eye', 0.001)
     ] },
-    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши', prizes: [
-      { name: 'Мишка', value: 0.2, chance: 30 }, { name: 'Сердце', value: 0.3, chance: 24 }, { name: '1 TON', value: 1, chance: 22 },
-      { name: 'Cookie Heart', value: 50, chance: 10 }, { name: 'B-Day Candle', value: 50, chance: 8 },
-      { name: 'Crystal Ball', value: 666, chance: 1.2, nft: true },
-      { name: 'Magic Potion', value: 600, chance: 1, nft: true },
-      { name: 'Genie Lamp', value: 650, chance: 0.9, nft: true },
-      { name: 'Voodoo Doll', value: 655, chance: 0.8, nft: true },
-      { name: 'Flying Broom', value: 650, chance: 0.7, nft: true },
-      { name: 'Witch Hat', value: 550, chance: 0.7, nft: true },
-      { name: 'Scared Cat', value: 721, chance: 0.4, nft: true },
-      { name: 'Kissed Frog', value: 721, chance: 0.3, nft: true }
+    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши и NFT', prizes: [
+      { name: 'Мишка', value: 0.2, chance: 36 }, { name: 'Сердце', value: 0.3, chance: 30 }, { name: '1 TON', value: 1, chance: 34 },
+      { name: '2 TON', value: 2, chance: 6 }, { name: '5 TON', value: 5, chance: 1 },
+      gp('Toy Bear', 0.25), gp('Eternal Rose', 0.12), gp('Cookie Heart', 0.05), gp('Love Candle', 0.05),
+      { name: 'Crystal Ball', value: 1200, chance: 0.001, nft: true },
+      gp('Lunar Snake', 0.002), gp('Party Sparkler', 0.002), gp('Magic Potion', 0.002), gp('Genie Lamp', 0.002), gp('Voodoo Doll', 0.002),
+      gp('Flying Broom', 0.002), gp('Skull Flower', 0.002), gp('Hex Pot', 0.002), gp('Sharp Tongue', 0.002), gp('Spiced Wine', 0.002), gp('Bunny Muffin', 0.002)
     ] },
     half: { id: 'half', name: '50|50 case', price: 5, desc: 'Мишка или NFT', prizes: [
-      { name: 'Мишка', value: 0.4, chance: 92 },
-      { name: 'Plush Pepe', value: 900, chance: 1.5, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 1.2, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 1, nft: true },
-      { name: 'Spy Agaric', value: 814, chance: 1, nft: true },
-      { name: 'Jelly Bunny', value: 721, chance: 1, nft: true },
-      { name: 'Trapped Heart', value: 690, chance: 0.9, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.7, nft: true },
-      { name: 'Vintage Cigar', value: 700, chance: 0.5, nft: true },
-      { name: 'Signet Ring', value: 700, chance: 0.2, nft: true }
+      { name: 'Мишка', value: 0.4, chance: 99.9 },
+      { name: 'Plush Pepe', value: 1600, chance: 0.1, nft: true },
+      gp('Precious Peach', 0.004), gp('Durov\'s Cap', 0.003), gp('Spy Agaric', 0.004), gp('Kissed Frog', 0.004), gp('Jelly Bunny', 0.004), gp('Scared Cat', 0.004),
+      gp('Trapped Heart', 0.004), gp('Perfume Bottle', 0.004), gp('Vintage Cigar', 0.004), gp('Signet Ring', 0.004), gp('Astral Shard', 0.004), gp('Hanging TON', 0.004),
+      gp('Crystal Ball', 0.004), gp('Genie Lamp', 0.004), gp('Jack-in-the-Box', 0.004)
     ] },
-    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, мишки, сердца', prizes: [
-      { name: 'Мишка', value: 0.3, chance: 22 }, { name: 'Сердце', value: 0.4, chance: 18 }, { name: '1 TON', value: 1, chance: 16 },
-      { name: 'Homemade Cake', value: 50, chance: 12 }, { name: 'Berry Box', value: 50, chance: 10 },
-      { name: 'Love Candle', value: 50, chance: 8 }, { name: 'Desk Calendar', value: 50, chance: 6 },
-      { name: 'Candy Cane', value: 500, chance: 1.5, nft: true },
-      { name: 'Ice Cream', value: 505, chance: 1.2, nft: true },
-      { name: 'Hypno Lollipop', value: 544, chance: 1, nft: true },
-      { name: 'Lunar Snake', value: 549, chance: 0.9, nft: true },
-      { name: 'Jester Hat', value: 550, chance: 0.8, nft: true },
-      { name: 'Party Sparkler', value: 587, chance: 0.7, nft: true },
-      { name: 'Bunny Muffin', value: 510, chance: 0.6, nft: true },
-      { name: 'Spiced Wine', value: 500, chance: 0.5, nft: true },
-      { name: 'Evil Eye', value: 550, chance: 0.4, nft: true },
-      { name: 'Hex Pot', value: 550, chance: 0.3, nft: true },
-      { name: 'Skull Flower', value: 600, chance: 0.2, nft: true },
-      { name: 'Sharp Tongue', value: 600, chance: 0.1, nft: true }
+    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, торты и NFT', prizes: [
+      { name: 'Мишка', value: 0.3, chance: 28 }, { name: 'Сердце', value: 0.4, chance: 24 }, { name: '1 TON', value: 1, chance: 22 },
+      { name: 'Homemade Cake', value: 2, chance: 16 }, { name: 'Berry Box', value: 2.4, chance: 10 },
+      { name: '2 TON', value: 2, chance: 4 }, { name: '5 TON', value: 5, chance: 1.5 },
+      gp('Cookie Heart', 0.4), gp('B-Day Candle', 0.4), gp('Love Candle', 0.4), gp('Desk Calendar', 0.4), gp('Toy Bear', 0.3), gp('Eternal Rose', 0.15),
+      { name: 'Candy Cane', value: 1800, chance: 0.001, nft: true }, { name: 'Ice Cream', value: 2100, chance: 0.001, nft: true },
+      gp('Snow Mittens', 0.002), gp('Santa Hat', 0.002), gp('Spiced Wine', 0.002), gp('Bunny Muffin', 0.002), gp('Party Sparkler', 0.002),
+      gp('Hypno Lollipop', 0.002), gp('Top Hat', 0.002), gp('Jester Hat', 0.002), gp('Lunar Snake', 0.002), gp('Plush Pepe', 0.001), gp('Precious Peach', 0.001)
     ] }
   };
   NX.CASES = CASES;
@@ -126,13 +105,7 @@
       $('v-cases').addEventListener('click', function (e) { var b = e.target.closest('[data-case]'); if (b) { NX.sfx('click'); openSheet(b.getAttribute('data-case')); } });
     },
     enter: function () { renderCases(); clearInterval(tickT); tickT = setInterval(tickFree, 1000); },
-    leave: function () {
-      clearInterval(tickT);
-      if (opening) {
-        opening = false;
-        try { $('spin').classList.remove('on'); $('spinSkip').classList.add('hide'); } catch (e) {}
-      }
-    }
+    leave: function () { clearInterval(tickT); }
   };
 
   /* ===== preview sheet ===== */
@@ -228,8 +201,10 @@
     });
     if (!fast) setTimeout(function () { if (opening) skipBtn.classList.remove('hide'); }, 1600);
     skipBtn.onclick = function () { skip = true; };
+    var guard = setTimeout(function () { if (opening) { skip = true; } }, 20000);
     (function frame(now) {
       var all = true;
+      try {
       info.forEach(function (o, idx) {
         if (o.fin) return;
         var t = skip ? 1 : Math.max(0, Math.min(1, (now - t0) / o.dur));
@@ -239,14 +214,15 @@
         if (idx === 0 && lastIdx[idx] !== ix) { lastIdx[idx] = ix; if (t < .985) { NX.sfx('tick'); if (ix % 2) NX.haptic('light'); } }
         if (t >= 1) { o.fin = true; o.st.children[W].classList.add('win'); NX.sfx('land'); } else all = false;
       });
+      } catch (err) { all = true; try { console.error(err); } catch (x) {} }
       if (!all) requestAnimationFrame(frame);
-      else setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain); }, skip ? 450 : 850);
+      else { clearTimeout(guard); setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain); }, skip ? 450 : 850); }
     })(performance.now());
   }
 
   function finishOpen(c, wins, added, isDemo, tonGain) {
     $('spin').classList.remove('on'); $('spinSkip').classList.add('hide');
-    opening = false;
+    opening = false; if (!wins.length) return;
     NX.renderUser(); if (NX.cur() === 'cases') renderCases();
     var best = wins.reduce(function (a, b) { return b.value > a.value ? b : a; }, wins[0]);
     var sum = NX.r2(wins.reduce(function (s, p) { return s + p.value; }, 0));

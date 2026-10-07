@@ -32,7 +32,7 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 #main{padding:calc(76px + env(safe-area-inset-top,0px)) 14px calc(var(--dock-h) + 36px + env(safe-area-inset-bottom,0px))}
 .view{display:none}
 .view.on{display:block;animation:viewIn .42s var(--ease) both}
-.view.back.on{animation-name:viewInBack}
+.view.rev.on{animation-name:viewInBack}
 @keyframes viewIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes viewInBack{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 

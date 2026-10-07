@@ -22,7 +22,8 @@
         if (sp === 'free_ok') free = true;
       }
     } catch (e) {}
-    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0) { user.balance = bal; setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900); }
+    /* the bot's sync link used to overwrite the balance on EVERY open (grants vanished) -> apply each distinct value once */
+    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0 && user.sync_seen !== bal) { user.sync_seen = bal; user.balance = bal; setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900); }
     if (free) { user.last_free = 0; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
     try {
       var wdOk = new URLSearchParams(location.search || '').get('wd_ok');
@@ -81,8 +82,13 @@
       document.addEventListener('visibilitychange', function () { if (document.hidden) NX.save(true); else NX.settleDue(); });
       setTimeout(function () { $('app').classList.remove('hide'); $('loader').classList.add('out'); setTimeout(function () { $('loader').classList.add('hide'); }, 600); NX.go('games', { force: true }); }, 250);
     }
-    NX.cloudLoad(start);
-    setTimeout(function () { start(null); }, 3800);
+    try { NX.dynAdmin = localStorage.getItem('nv_adm_' + user.id) === '1'; } catch (e) {}
+    function newest(a, b) { if (!a) return b; if (!b) return a; return (b.updated_at || 0) > (a.updated_at || 0) ? b : a; }
+    NX.cloudLoad(function (tgCloud) {
+      if (!NX.net || !NX.net.enabled()) { start(tgCloud); return; }
+      NX.net.pullState().then(function (fs) { start(newest(tgCloud, fs)); }, function () { start(tgCloud); });
+    });
+    setTimeout(function () { start(null); }, 5500);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })(window.NX);

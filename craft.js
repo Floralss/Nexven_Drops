@@ -93,7 +93,6 @@
       $('upGo').onclick = go;
     },
     enter: function () { if (!busy) { selId = null; target = null; } render(); },
-    leave: function () { /* keep selection if mid-craft */ },
     refresh: function () { render(); }
   };
 })(window.NX);
