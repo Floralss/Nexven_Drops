@@ -214,7 +214,10 @@
     NX.save(); NX.renderUser();
   };
   NX.credit = function (amt) {
-    amt = NX.r2(amt); if (!amt) return; user.balance = NX.r2(user.balance + amt); NX.save(); NX.renderUser();
+    amt = NX.r2(amt); if (!amt) return;
+    user.balance = NX.r2(user.balance + amt);
+    NX.save(true);
+    NX.renderUser();
   };
   NX.stat = function (k, inc) { user.stats = user.stats || {}; user.stats[k] = (user.stats[k] || 0) + (inc == null ? 1 : inc); };
   NX.noteBest = function (name, value) {
@@ -266,18 +269,26 @@
     opt = opt || {};
     if (cur === name && !opt.force) return;
     var from = cur;
-    if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
+    try {
+      if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
+    } catch (e) { try { console.warn('leave', from, e); } catch (er) {} }
     cur = name;
-    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
-    var v = $('v-' + name);
-    if (opt.back) v.classList.add('back');
-    void v.offsetWidth; v.classList.add('on');
-    var tab = TAB_OF[name];
-    NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
-    var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
-    w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
-    if (NX.pages[name].enter) NX.pages[name].enter();
-    try { if (tg && tg.BackButton) { if (tab === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
+    try {
+      NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
+      var v = $('v-' + name);
+      if (v) {
+        if (opt.back) v.classList.add('back');
+        void v.offsetWidth; v.classList.add('on');
+      }
+      var tab = TAB_OF[name];
+      NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
+      var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
+      w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
+    } catch (e) { try { console.warn('go view', name, e); } catch (er) {} }
+    try {
+      if (NX.pages[name].enter) NX.pages[name].enter();
+    } catch (e) { try { console.warn('enter', name, e); } catch (er) {} }
+    try { if (tg && tg.BackButton) { if (TAB_OF[name] === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
   };
   NX.back = function () { NX.go('games', { back: true }); };
   NX.pageHead = function (title, sub, right) {

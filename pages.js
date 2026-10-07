@@ -132,24 +132,55 @@
       b.onclick = function () { NX.qa('#pays button').forEach(function (x) { x.classList.toggle('on', x === b); }); payBox(k); NX.haptic('select'); };
     });
 
-    /* admin (same rules as before) */
+    /* admin */
     var u = function () { return NX.user(); };
     $('btnAdmGive').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Выдавать может только владелец', 'error'); return; }
-      var tid = parseInt($('admId').value, 10), amt = parseFloat($('admAmt').value);
-      if (!tid || isNaN(amt)) { NX.toast('Нужны ID и сумма', 'error'); return; }
-      if (tid === u().id) { NX.credit(amt); $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON'; NX.sfx('win'); NX.toast('Баланс обновлён', 'success'); }
-      else { $('admRes').textContent = 'Другому игроку — через бота (он должен открыть ссылку-кнопку)'; NX.toast('Для других используйте бота', 'error'); }
+      var tid = parseInt($('admId').value, 10), amt = parseFloat(String($('admAmt').value).replace(',', '.'));
+      if (!tid || isNaN(amt) || amt === 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
+      if (tid === u().id) {
+        NX.credit(amt);
+        NX.save(true);
+        $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON';
+        NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
+        return;
+      }
+      if (!NX.net || !NX.net.enabled()) {
+        $('admRes').textContent = 'Для выдачи другим нужен Firebase: впиши projectId и apiKey в config.js';
+        NX.toast('Firebase не настроен', 'error');
+        return;
+      }
+      $('admRes').textContent = 'Отправляем…';
+      NX.net.grant(tid, amt, function (err) {
+        if (err) {
+          $('admRes').textContent = 'Ошибка: ' + (err.message || err);
+          NX.toast('Не удалось выдать', 'error');
+        } else {
+          $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON игроку ' + tid + '. Он получит при следующем заходе.';
+          NX.sfx('win'); NX.toast('Выдано', 'success');
+        }
+      });
     };
     $('btnAdmTake').onclick = function () {
       if (!NX.isOwner()) { NX.toast('Забирать может только владелец', 'error'); return; }
-      var amt = parseFloat($('admAmt').value) || 0;
-      if (parseInt($('admId').value, 10) === u().id) { NX.credit(-Math.min(amt, u().balance)); $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON'; }
+      var amt = parseFloat(String($('admAmt').value).replace(',', '.')) || 0;
+      var tid = parseInt($('admId').value, 10);
+      if (tid === u().id) {
+        NX.credit(-Math.min(Math.abs(amt), u().balance));
+        NX.save(true);
+        $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON';
+      } else {
+        NX.toast('Забирать у других можно только себе', 'error');
+      }
     };
     $('btnAdmFree').onclick = function () {
       if (!NX.isStaff()) return;
-      if (parseInt($('admId').value, 10) === u().id) { u().last_free = 0; NX.save(true); $('admRes').textContent = 'Бесплатный кейс сброшен'; NX.toast('Бесплатный кейс готов', 'success'); }
-      else NX.toast('Для других используйте бота', 'error');
+      var tid = parseInt($('admId').value, 10);
+      if (tid === u().id) {
+        u().last_free = 0; NX.save(true);
+        $('admRes').textContent = 'Бесплатный кейс сброшен';
+        NX.toast('Бесплатный кейс готов', 'success');
+      } else NX.toast('Сброс free-кейса только для себя', 'error');
     };
   }
   NX.bindModals = bindModals;

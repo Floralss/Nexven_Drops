@@ -9,4 +9,17 @@ service cloud.firestore {
   }
 }
 
-Без этого админ-выдача звёзд НЕ РАБОТАЕТ.
+Без этого НЕ работают:
+- общий лидерборд
+- онлайн
+- выдача TON другим игрокам из админ-панели (коллекция grants)
+
+Как подключить:
+1. Создай проект в console.firebase.google.com
+2. Firestore Database -> Create (production или test mode)
+3. Project settings -> General -> скопируй projectId и Web API Key
+4. Впиши их в config.js:
+   projectId: 'твой-project-id',
+   apiKey: 'AIza...'
+5. Опубликуй rules выше
+6. Задеплой сайт заново
