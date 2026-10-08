@@ -174,7 +174,29 @@
     }
     return n;
   };
+  /* snapshot of the player's referral list from the bot: [[id, name, earned], ...] (URL ?rs= or Firestore rewards/{uid}.refs) */
+  net.applyRefSnapshot = function (rows) {
+    var u = NX.user(); if (!u || !Array.isArray(rows)) return;
+    u.refs = u.refs || [];
+    var changed = false;
+    rows.forEach(function (x) {
+      var id, name, earned;
+      if (Array.isArray(x)) { id = x[0]; name = x[1]; earned = Number(x[2]) || 0; } else if (x) { id = x.id; name = x.name; earned = Number(x.earned) || 0; } else return;
+      if (id == null) return; id = String(id);
+      var row = null; u.refs.forEach(function (r) { if (String(r.id) === id) row = r; });
+      if (!row) { u.refs.push({ id: id, name: String(name || 'Друг'), earned: NX.r2(earned) }); changed = true; return; }
+      if (name && row.name !== name) { row.name = String(name); changed = true; }
+      if (earned > (row.earned || 0)) { row.earned = NX.r2(earned); changed = true; }
+    });
+    if (changed) { NX.save(true); try { var cur = NX.cur(); if (cur === 'profile' && NX.pages.profile.enter) NX.pages.profile.enter(); } catch (e) {} }
+  };
+  function b64json(t) {
+    t = String(t).replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '=';
+    var bin = atob(t), bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  }
   net.rewardFromUrl = function () {
+    try { var rs = new URLSearchParams(location.search || '').get('rs'); if (rs) net.applyRefSnapshot(b64json(rs)); } catch (e) {}
     try {
       var t = new URLSearchParams(location.search || '').get('rw'); if (!t) return;
       t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '=';
@@ -191,6 +213,7 @@
         polling2 = false;
         var raw = j && j.fields && j.fields.rewards && j.fields.rewards.stringValue, list = [];
         try { list = raw ? JSON.parse(raw) : []; } catch (e) {}
+        try { var rf = j && j.fields && j.fields.refs && j.fields.refs.stringValue; if (rf) net.applyRefSnapshot(JSON.parse(rf)); } catch (e) {}
         var wd = j && j.fields && j.fields.wd_until && Number(j.fields.wd_until.integerValue || 0);
         if (wd && wd > (u.wd_until || 0)) { u.wd_until = wd; NX.save(); }
         net.applyRewards(list);
