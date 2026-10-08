@@ -137,6 +137,66 @@
     var wipeRow = http(base() + '/' + C('players') + '/' + encodeURIComponent(String(to)) + '?' + mask + '&currentDocument.exists=true&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: row }) }).catch(function () {});
     return net.sendGrant(to, withInv ? 1 : 0, 'reset').then(function (r) { return wipeRow.then(function () { return r; }); });
   };
+
+  /* ---------- rewards from the bot (deposits, referrals, promo, admin) ----------
+     Two delivery paths, same data: (1) ?rw=<base64url json> in the "Открыть приложение" button, (2) Firestore doc {prefix}rewards/{uid}.
+     Each reward has a unique id and is applied ONCE (ids kept in user.grants_done as 'rw:<id>'). */
+  net.applyRewards = function (list) {
+    var u = NX.user(); if (!u || !Array.isArray(list)) return 0;
+    u.grants_done = u.grants_done || []; u.refs = u.refs || [];
+    var msgs = [], n = 0;
+    list.forEach(function (r) {
+      if (!r || r.id == null) return;
+      var gid = 'rw:' + r.id; if (u.grants_done.indexOf(gid) >= 0) return;
+      u.grants_done.push(gid); n++;
+      var ton = Number(r.ton) || 0;
+      if (r.ref && r.ref.id != null) {
+        var rid = String(r.ref.id), row = null;
+        u.refs.forEach(function (x) { if (String(x.id) === rid) row = x; });
+        if (!row) { row = { id: rid, name: String(r.ref.name || 'Друг'), earned: 0 }; u.refs.push(row); if (r.src === 'ref') msgs.push('Новый реферал: ' + row.name); }
+        if (r.ref.name) row.name = String(r.ref.name);
+        if (r.src === 'referral' && ton > 0) { row.earned = NX.r2((row.earned || 0) + ton); msgs.push('Реферал ' + row.name + ': +' + NX.fmt(ton) + ' TON'); }
+      }
+      if (ton) {
+        u.balance = NX.r2(Math.max(0, u.balance + ton));
+        if (r.src === 'deposit' && ton > 0) { u.total_deposited = NX.r2((u.total_deposited || 0) + ton); msgs.push('Пополнение: +' + NX.fmt(ton) + ' TON'); }
+        else if (r.src === 'promo') msgs.push('Промокод: +' + NX.fmt(ton) + ' TON');
+        else if (r.src !== 'referral') msgs.push((ton > 0 ? 'Начислено +' : 'Списано ') + NX.fmt(Math.abs(ton)) + ' TON');
+      }
+      if (r.free) { u.last_free = 0; msgs.push('Бесплатный кейс готов'); }
+      if (Array.isArray(r.gifts)) r.gifts.forEach(function (nm) { try { var gi = window.giftInfo(nm); NX.addItem({ name: nm, value: gi.value, nft: !!gi.nft }); msgs.push('Подарок: ' + nm); } catch (e) {} });
+      if (r.wdu && Number(r.wdu) > (u.wd_until || 0)) { u.wd_until = Number(r.wdu); msgs.push('Вывод подарков открыт'); }
+    });
+    if (n) {
+      NX.save(true); try { NX.renderUser(); } catch (e) {}
+      msgs.forEach(function (m, i) { setTimeout(function () { NX.toast(m, 'success'); NX.sfx('win'); }, i * 1500); });
+      try { var cur = NX.cur(); if (cur && NX.pages[cur] && NX.pages[cur].enter) NX.pages[cur].enter(); } catch (e) {}
+    }
+    return n;
+  };
+  net.rewardFromUrl = function () {
+    try {
+      var t = new URLSearchParams(location.search || '').get('rw'); if (!t) return;
+      t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '=';
+      var bin = atob(t), bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      net.applyRewards([JSON.parse(new TextDecoder('utf-8').decode(bytes))]);
+    } catch (e) {}
+  };
+  var polling2 = false;
+  net.pollRewards = function () {
+    var u = NX.user(); if (!net.enabled() || !u || !NX.ready || polling2) return; polling2 = true;
+    http(base() + '/' + C('rewards') + '/' + encodeURIComponent(String(u.id)) + '?' + key())
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        polling2 = false;
+        var raw = j && j.fields && j.fields.rewards && j.fields.rewards.stringValue, list = [];
+        try { list = raw ? JSON.parse(raw) : []; } catch (e) {}
+        var wd = j && j.fields && j.fields.wd_until && Number(j.fields.wd_until.integerValue || 0);
+        if (wd && wd > (u.wd_until || 0)) { u.wd_until = wd; NX.save(); }
+        net.applyRewards(list);
+      })
+      .catch(function () { polling2 = false; });
+  };
   var polling = false;
   net.pollGrants = function () {
     var u = NX.user(); if (!net.enabled() || !u || !NX.ready || polling) return; polling = true;
@@ -151,14 +211,7 @@
           amt = f.amount ? Number(f.amount.doubleValue != null ? f.amount.doubleValue : f.amount.integerValue || 0) : 0;
           u.grants_done = u.grants_done || [];
           var seen = u.grants_done.indexOf(gid) >= 0;
-          if (!seen && type === 'ref') {
-            var rid = str(f.uid), rname = str(f.name) || 'Друг', row = null;
-            u.refs = u.refs || [];
-            u.refs.forEach(function (r) { if (String(r.id) === rid) row = r; });
-            if (!row) { u.refs.push({ id: rid, name: rname, earned: 0 }); msgs.push('Новый реферал: ' + rname); changed = true; row = u.refs[u.refs.length - 1]; }
-            if (amt > 0) row.earned = NX.r2((row.earned || 0) + amt);  /* TON itself is credited by the bot; this is only the counter */
-            u.grants_done.push(gid); changed = true;
-          } else if (!seen) {
+          if (!seen) {
             var okBy = (type === 'ton' || type === 'reset') ? NX.sameId(by, NX.OWNER_ID) : (NX.sameId(by, NX.OWNER_ID) || NX.ADMIN_IDS.some(function (id) { return NX.sameId(by, id); }));
             if (okBy) {
               if (type === 'ton') { u.balance = NX.r2(Math.max(0, u.balance + amt)); msgs.push((amt >= 0 ? 'Вам начислено +' : 'Списано ') + NX.fmt(Math.abs(amt)) + ' TON'); }
@@ -266,8 +319,8 @@
 
   net.start = function () {
     if (!net.enabled()) return;
-    net.push(true); net.pollGrants();
-    setInterval(function () { if (!document.hidden) { net.push(true); net.pollGrants(); } }, HEART_MS);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { net.push(true); net.pollGrants(); } });
+    net.push(true); net.pollGrants(); net.pollRewards();
+    setInterval(function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); } }, HEART_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); } });
   };
 })(window.NX);

@@ -157,7 +157,7 @@
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
       stats: slimStats(user.stats), pend: user.pend || [], mn: user.mn || null, wd_requests: (user.wd_requests || []).slice(-15),
-      grants_done: (user.grants_done || []).slice(-60), refs: (user.refs || []).slice(-200), wd_until: user.wd_until || 0, last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
+      grants_done: (user.grants_done || []).slice(-300), refs: (user.refs || []).slice(-200), wd_until: user.wd_until || 0, last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
