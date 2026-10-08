@@ -22,8 +22,12 @@
         if (sp === 'free_ok') free = true;
       }
     } catch (e) {}
-    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0) { user.balance = bal; setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900); }
-    if (free) { user.last_free = 0; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
+    /* a sync link is applied ONCE; re-opening the same stale link no longer resets the balance */
+    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0 && bal !== user.last_sync) {
+      user.balance = bal; user.last_sync = bal;
+      setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900);
+    }
+    if (free && !user.free_link_done) { user.last_free = 0; user.free_link_done = true; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
     try {
       var wdOk = new URLSearchParams(location.search || '').get('wd_ok');
       if (wdOk && user.inventory) {
@@ -58,18 +62,24 @@
     if (loc) NX.unpack(loc, user);
     NX.setUser(user); trackReferral(user);
     prog(45);
-    var started = false;
-    function start(cloud) {
+    var started = false, got = { cloud: undefined, remote: undefined };
+    function newest() {
+      var best = null;
+      [got.cloud, got.remote].forEach(function (o) { if (o && (o.updated_at || 0) >= (user._updated || 0) && (!best || (o.updated_at || 0) > (best.updated_at || 0))) best = o; });
+      return best;
+    }
+    function start() {
       if (started) return; started = true;
-      if (cloud) { if ((cloud.updated_at || 0) >= (user._updated || 0)) NX.unpack(cloud, user); else NX.cloudSave(); }
+      var b = newest(); if (b) NX.unpack(b, user);
       applyDeepLink(user);
       prog(75);
-      /* views */
       var order = ['games', 'cases', 'top', 'profile', 'plinko', 'mines', 'crash', 'roulette', 'craft'], main = $('main');
       order.forEach(function (n) { var s = document.createElement('section'); s.className = 'view'; s.id = 'v-' + n; main.appendChild(s); });
-      order.forEach(function (n) { if (NX.pages[n].build) NX.pages[n].build(); });
+      order.forEach(function (n) { try { if (NX.pages[n].build) NX.pages[n].build(); } catch (e) { console.error(e); } });
       NX.renderAvatar(); NX.renderUser(true); NX.bindModals();
-      NX.settleDue(); NX.save(true); if (NX.net) NX.net.start();
+      NX.ready = true;
+      NX.settleDue(); NX.save(true);
+      if (NX.net) { NX.net.start(); NX.net.retryLoad(function (o) { NX.unpack(o, user); NX.save(); NX.renderUser(true); NX.go(NX.cur() || 'games', { force: true }); }); }
       $('nav').onclick = function (e) { var b = e.target.closest('.nb'); if (!b) return; NX.sfx('tab'); NX.haptic('light'); var t = b.getAttribute('data-t'); NX.go(t, { force: NX.cur() !== t }); };
       $('btnAvatar').onclick = function () { NX.sfx('click'); NX.go('profile'); };
       document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { NX.sfx('click'); NX.back(); } });
@@ -77,12 +87,25 @@
       NX.go('games', { force: true });
       prog(100);
       setInterval(NX.settleDue, 1000);
-      setInterval(NX.cloudSave, 15000);
-      document.addEventListener('visibilitychange', function () { if (document.hidden) NX.save(true); else NX.settleDue(); });
+      setInterval(function () { NX.cloudSave(); if (NX.net) NX.net.saveState(false); }, 15000);
+      function flush() { NX.save(true); }
+      document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else NX.settleDue(); });
+      window.addEventListener('pagehide', flush);
+      try { if (tg && tg.onEvent) tg.onEvent('viewportChanged', function (e) { if (e && e.isStateStable === false) return; }); } catch (e) {}
       setTimeout(function () { $('app').classList.remove('hide'); $('loader').classList.add('out'); setTimeout(function () { $('loader').classList.add('hide'); }, 600); NX.go('games', { force: true }); }, 250);
     }
-    NX.cloudLoad(start);
-    setTimeout(function () { start(null); }, 3800);
+    var waiting = 2;
+    function step() { if (--waiting <= 0) start(); }
+    NX.cloudLoad(function (c) { got.cloud = c; step(); });
+    if (NX.net && NX.net.enabled()) NX.net.loadState(function (o) { got.remote = o; step(); }); else step();
+    setTimeout(start, 5200);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})(window.NX);
+
+/* global safety net: never leave the user stuck behind a dead overlay */
+(function (NX) {
+  window.addEventListener('error', function () { try { if (NX.openGuard) NX.openGuard(); } catch (e) {} });
+  window.addEventListener('unhandledrejection', function (e) { try { e.preventDefault(); } catch (x) {} });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && NX.openGuard) setTimeout(NX.openGuard, 300); });
 })(window.NX);

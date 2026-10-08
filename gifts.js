@@ -66,6 +66,7 @@
     'Spiced Wine':    { value: 500, nft: true, slug: 'spicedwine' },
     'Bunny Muffin':   { value: 510, nft: true, slug: 'bunnymuffin' },
     'Astral Shard':   { value: 800, nft: true, slug: 'astralshard' },
+    'Candy Cane':     { value: 500, nft: true, img: frag('candycane'), slug: 'candycane' },
     'Hanging TON':    { value: 505, nft: true, slug: 'hangingstar' }
   };
 
@@ -98,7 +99,7 @@
   function giftInfo(name) { return G[name] || { value: 10, nft: false }; }
 
   /* case cover gifts (peek out of the chest) */
-  var CASE_GIFT = { free: 'B-Day Candle', dust: 'Desk Calendar', selected: 'Ice Cream', half: 'Plush Pepe', cake: 'Homemade Cake', neon: 'Signet Ring', legend: 'Crystal Ball', titan: 'Astral Shard', void: "Durov's Cap" };
+  var CASE_GIFT = { free: 'B-Day Candle', dust: 'Desk Calendar', selected: 'Ice Cream', half: 'Plush Pepe', cake: 'Homemade Cake' };
 
   w.GIFTS = G; w.giftImg = giftImg; w.giftSrc = giftSrc; w.giftInfo = giftInfo; w.CASE_GIFT = CASE_GIFT;
 })(window);

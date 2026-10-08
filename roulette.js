@@ -93,7 +93,7 @@
       };
     },
     enter: function () { on = true; lastKey = ''; lastRound = -1; lastHist = ''; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); },
-    leave: function () { on = false; try { cancelAnimationFrame(raf); } catch (e) {} raf = 0; }
+    leave: function () { on = false; cancelAnimationFrame(raf); }
   };
   NX.roulette = { slotOf: slotOf, colorOf: colorOf, PERIOD: PERIOD };
 })(window.NX);

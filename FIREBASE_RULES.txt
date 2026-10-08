@@ -1,18 +1,8 @@
-═══════════════════════════════════════════════════════════
-  СЕЙЧАС БАЗА FIRESTORE НЕ СОЗДАНА — ПОЭТОМУ ВСЁ ПАДАЕТ
-═══════════════════════════════════════════════════════════
+НАСТРОЙКА FIREBASE (проект custom-graphics-36c50) — 2 минуты, один раз:
 
-Сделай ОДИН РАЗ (2 минуты):
-
-1) Открой:
-   https://console.firebase.google.com/project/custom-graphics-36c50/firestore
-
-2) Нажми «Create database»
-
-3) Выбери «Start in test mode» → Next → Enable
-   (регион можно оставить по умолчанию)
-
-4) Вкладка Rules → вставь и Publish:
+1) console.firebase.google.com -> проект custom-graphics-36c50 -> Build -> Firestore Database.
+   Если написано "Create database" — нажми, режим Production или Test (любой), регион любой, база "(default)".
+2) Вкладка Rules -> вставь это -> Publish:
 
 rules_version = '2';
 service cloud.firestore {
@@ -23,15 +13,8 @@ service cloud.firestore {
   }
 }
 
-5) Залей папку web/ на GitHub Pages и переоткрой мини-апп.
+3) Build -> Project settings -> General: убедись, что Web API key совпадает с apiKey в config.js
+   (если ключ ограничен по HTTP-referrer — разреши домен GitHub Pages или сними ограничение,
+   а также убедись что в Google Cloud включён "Cloud Firestore API").
 
-После этого заработают:
-  • общий лидерборд
-  • онлайн
-  • выдача TON другим из админки
-
-Ключи уже прописаны в config.js:
-  projectId: custom-graphics-36c50
-  apiKey: AIzaSyAPTTDTPzDpKQjpPvze1IBsJQJw74_ua34
-
-БЕЗ шага Create database никакой код не поможет — Google возвращает 404.
+Без шагов 1-2 лидерборд, онлайн и выдача игрокам НЕ работают (в приложении будет написана причина: 403 / 404).

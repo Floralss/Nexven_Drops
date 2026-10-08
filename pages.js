@@ -12,32 +12,15 @@
     { id: 'craft', title: 'КРАФТ', desc: 'Улучшение предмета', tag: 'x1.5 – x5', art: 'craft' }
   ];
   NX.pages.games = {
+    enter: function () { clearInterval(onT); var upd = function () { if (NX.net.enabled()) NX.net.fetchOnline().then(function (n) { var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1); }, function () {}); }; upd(); onT = setInterval(upd, 20000); },
+    leave: function () { clearInterval(onT); },
     build: function () {
-      var root = $('v-games');
-      root.innerHTML = '<div class="lb-online sm" id="gmOnline"><i class="dot"></i>Онлайн: <b id="gmOnN">1</b></div><div class="banners">' + GAMES.map(function (g, i) {
+      $('v-games').innerHTML = '<div class="lb-online sm" id="gmOnline"><i class="dot"></i>Онлайн: <b id="gmOnN">1</b></div><div class="banners">' + GAMES.map(function (g, i) {
         return '<button type="button" class="banner" data-game="' + g.id + '" style="animation-delay:' + (i * 90) + 'ms">' + ART.banners[g.art]() +
           '<span class="bn-tag">' + g.tag + '</span><span class="bn-label"><div class="bn-t">' + g.title + '</div><div class="bn-d">' + g.desc + '</div></span></button>';
       }).join('') + '</div>';
-      root.onclick = function (e) { var b = e.target.closest('[data-game]'); if (b) { NX.sfx('click'); NX.haptic('light'); NX.go(b.getAttribute('data-game')); } };
-    },
-    enter: function () {
-      /* rebuild every enter — fixes broken banners after leaving mini-games */
-      NX.pages.games.build();
-      clearInterval(onT);
-      var upd = function () {
-        if (NX.net && NX.net.enabled()) {
-          NX.net.fetchOnline().then(function (n) {
-            var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1);
-          }, function () { var e = $('gmOnN'); if (e) e.textContent = '1'; });
-        } else {
-          var e = $('gmOnN'); if (e) e.textContent = '1';
-        }
-      };
-      upd();
-      onT = setInterval(upd, 20000);
-      try { window.scrollTo(0, 0); } catch (e) {}
-    },
-    leave: function () { clearInterval(onT); }
+      $('v-games').onclick = function (e) { var b = e.target.closest('[data-game]'); if (b) { NX.sfx('click'); NX.haptic('light'); NX.go(b.getAttribute('data-game')); } };
+    }
   };
 
   /* ===== leaderboard ===== */
@@ -65,31 +48,26 @@
   }
   function loadBoard(first) {
     var u = NX.user(), box = $('lbRows'), head = $('lbOnline');
-    if (!NX.net || !NX.net.enabled()) {
-      head.innerHTML = '<i class="dot"></i>Онлайн: —';
-      box.innerHTML = '<div class="empty">Firebase не настроен в config.js</div>';
+    if (!NX.net.enabled()) {
+      var rows = localRows(); rows.forEach(function (r) { r.online = String(r.id) === String(u.id); });
+      head.innerHTML = '<i class="dot"></i>Онлайн: <b>1</b>';
+      box.innerHTML = rowsHtml(rows, u) + (NX.isStaff() ? '<div class="empty">Общий топ выключен: впиши projectId и apiKey Firebase в config.js, и здесь появятся все игроки.</div>' : '');
       return;
     }
     if (first) box.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>';
     NX.net.push(true);
     NX.net.fetchBoard().then(function (res) {
       if (NX.cur() !== 'top') return;
-      var rows = res.rows || [], mine = rows.some(function (r) { return String(r.id) === String(u.id); });
+      var rows = res.rows, mine = rows.some(function (r) { return String(r.id) === String(u.id); });
       if (!mine) rows.push({ id: u.id, name: u.first_name || 'Игрок', photo: u.photo_url || null, spent: NX.r2(u.total_spent || 0), best: (u.stats && u.stats.best) || null, online: true });
       rows.sort(function (a, b) { return b.spent - a.spent; });
       head.innerHTML = '<i class="dot"></i>Онлайн: <b>' + Math.max(res.online, 1) + '</b><span class="tot">Игроков: ' + rows.length + '</span>';
       box.innerHTML = rowsHtml(rows, u);
-    }).catch(function () {
+    }).catch(function (e) {
       if (NX.cur() !== 'top') return;
-      head.innerHTML = '<i class="dot"></i>Онлайн: —';
-      box.innerHTML = '<div class="empty" style="line-height:1.5;padding:16px">' +
-        '<b style="color:#fff">Firestore: база Firestore не создана</b><br><br>' +
-        '1. Открой ссылку ниже<br>' +
-        '2. Create database → <b>test mode</b> → Enable<br>' +
-        '3. Rules → allow read, write: if true → Publish<br>' +
-        '4. Нажми «Повторить»<br><br>' +
-        '<a href="https://console.firebase.google.com/project/custom-graphics-36c50/firestore" target="_blank" rel="noopener" style="color:#5aa2ff">Открыть Firebase Console</a><br><br>' +
-        '<button type="button" class="btn sm" id="lbRetry" style="margin-top:8px;max-width:200px">Повторить</button></div>';
+      var rows = localRows(); rows.forEach(function (r) { r.online = String(r.id) === String(u.id); });
+      if (first) box.innerHTML = rowsHtml(rows, u) + '<div class="empty" style="font-size:12px">' + NX.esc((e && e.message) || 'Нет связи') + '<br><button type="button" class="btn sm ghost" id="lbRetry" style="margin-top:12px;max-width:200px">Повторить</button></div>';
+      head.innerHTML = '<i class="dot off"></i>Онлайн: <b>—</b>';
       var rb = $('lbRetry'); if (rb) rb.onclick = function () { loadBoard(true); };
     });
   }
@@ -130,8 +108,8 @@
       $('sndOn').onchange = function () { NX.setMuted(!this.checked); NX.haptic('select'); };
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
-        $('admRole').textContent = NX.isOwner() ? 'Владелец: выдача себе и через бота' : 'Админ: выдача себе и через бота';
-        NX.open('modAdmin');
+        $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать и забирать TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
+        NX.open('modAdmin'); NX.loadAdminPlayers();
       };
     }
   };
@@ -156,62 +134,47 @@
       b.onclick = function () { NX.qa('#pays button').forEach(function (x) { x.classList.toggle('on', x === b); }); payBox(k); NX.haptic('select'); };
     });
 
-    /* admin */
+    /* admin: owner can give/take TON, staff can reset the free case; other players get it via Firestore grants */
     var u = function () { return NX.user(); };
+    function sent(ok, msg) { $('admRes').textContent = msg; if (ok) { NX.toast('Отправлено', 'success'); NX.sfx('win'); } else NX.toast(msg, 'error'); }
+    function toOther(tid, amt, type, okMsg) {
+      if (!NX.net.enabled()) { sent(false, 'Выдача другим игрокам работает через Firebase: впиши projectId и apiKey в config.js'); return; }
+      $('admRes').textContent = 'Отправляю…';
+      NX.net.sendGrant(tid, amt, type).then(function () { sent(true, okMsg + ' Игрок получит это при ближайшем заходе (до 20 сек, если он сейчас в игре).'); })
+        .catch(function (e) { sent(false, (e && e.message) || 'Не удалось отправить'); });
+    }
     $('btnAdmGive').onclick = function () {
-      if (!NX.isStaff()) { NX.toast('Нет доступа', 'error'); return; }
-      var tid = parseInt($('admId').value, 10), amt = parseFloat(String($('admAmt').value).replace(',', '.'));
-      if (!tid || isNaN(amt) || amt === 0) { NX.toast('Нужны ID и сумма', 'error'); return; }
-      if (Number(tid) === Number(u().id)) {
-        NX.credit(amt);
-        NX.save(true);
-        try { if (NX.net && NX.net.push) NX.net.push(true); } catch (e) {}
-        $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON';
-        NX.sfx('win'); NX.toast('Баланс обновлён', 'success');
-        return;
-      }
-      function openBotGive() {
-        var url = 'https://t.me/' + NX.BOT + '?start=give_' + tid + '_' + encodeURIComponent(String(amt));
-        $('admRes').textContent = 'Открываю бота: выдача ' + NX.fmt(amt) + ' TON → ' + tid;
-        try {
-          if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink(url);
-          else window.open(url, '_blank');
-        } catch (e) {}
-        NX.toast('Подтверди выдачу в боте', 'success');
-      }
-      if (NX.net && NX.net.enabled() && NX.net.grant) {
-        $('admRes').textContent = 'Отправляем…';
-        NX.net.grant(tid, amt, function (err) {
-          if (err) openBotGive();
-          else {
-            $('admRes').textContent = 'Выдано ' + NX.fmt(amt) + ' TON → ' + tid + '. Игрок получит при входе.';
-            NX.sfx('win'); NX.toast('Выдано', 'success');
-          }
-        });
-      } else openBotGive();
+      if (!NX.isOwner()) { NX.toast('Выдавать может только владелец', 'error'); return; }
+      var tid = parseInt($('admId').value, 10), amt = parseFloat($('admAmt').value);
+      if (!tid || isNaN(amt) || amt <= 0) { NX.toast('Нужны ID и сумма больше 0', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { NX.credit(amt); NX.save(true); $('admRes').textContent = 'Готово. Баланс ' + NX.fmt(u().balance) + ' TON'; NX.sfx('win'); NX.toast('Баланс обновлён', 'success'); }
+      else toOther(tid, amt, 'ton', 'Выдача +' + NX.fmt(amt) + ' TON для ' + tid + ' отправлена.');
     };
     $('btnAdmTake').onclick = function () {
-      if (!NX.isStaff()) { NX.toast('Нет доступа', 'error'); return; }
-      var amt = parseFloat(String($('admAmt').value).replace(',', '.')) || 0;
-      var tid = parseInt($('admId').value, 10);
-      if (Number(tid) === Number(u().id)) {
-        NX.credit(-Math.min(Math.abs(amt), u().balance));
-        NX.save(true);
-        $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON';
-        NX.toast('Забрано', 'success');
-      } else {
-        NX.toast('Забирать можно только у себя в мини-аппе', 'error');
-      }
+      if (!NX.isOwner()) { NX.toast('Забирать может только владелец', 'error'); return; }
+      var tid = parseInt($('admId').value, 10), amt = parseFloat($('admAmt').value);
+      if (!tid || isNaN(amt) || amt <= 0) { NX.toast('Нужны ID и сумма больше 0', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { NX.credit(-Math.min(amt, u().balance)); NX.save(true); $('admRes').textContent = 'Забрано. Баланс ' + NX.fmt(u().balance) + ' TON'; }
+      else toOther(tid, -amt, 'ton', 'Списание ' + NX.fmt(amt) + ' TON у ' + tid + ' отправлено.');
     };
     $('btnAdmFree').onclick = function () {
       if (!NX.isStaff()) return;
-      var tid = parseInt($('admId').value, 10);
-      if (Number(tid) === Number(u().id)) {
-        u().last_free = 0; NX.save(true);
-        $('admRes').textContent = 'Бесплатный кейс сброшен';
-        NX.toast('Бесплатный кейс готов', 'success');
-      } else NX.toast('Сброс free только для себя', 'error');
+      var tid = parseInt($('admId').value, 10); if (!tid) { NX.toast('Введи ID игрока', 'error'); return; }
+      if (NX.sameId(tid, u().id)) { u().last_free = 0; NX.save(true); $('admRes').textContent = 'Бесплатный кейс сброшен'; NX.toast('Бесплатный кейс готов', 'success'); }
+      else toOther(tid, 0, 'free', 'Сброс бесплатного кейса для ' + tid + ' отправлен.');
     };
+    /* player picker (needs shared leaderboard) */
+    $('admPick').onclick = function (e) { var r = e.target.closest('[data-pid]'); if (r) { $('admId').value = r.getAttribute('data-pid'); NX.haptic('select'); } };
   }
+  NX.loadAdminPlayers = function () {
+    var box = $('admPick'); if (!box) return;
+    if (!NX.net.enabled()) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="hint">Загружаю игроков…</div>';
+    NX.net.fetchBoard().then(function (res) {
+      box.innerHTML = '<div class="lab" style="margin:10px 0 6px">Игроки (нажми, чтобы подставить ID)</div>' + res.rows.slice(0, 40).map(function (r) {
+        return '<button type="button" class="prow" data-pid="' + NX.esc(r.id) + '"><span>' + (r.online ? '<i class="dot"></i>' : '<i class="dot off"></i>') + NX.esc(r.name) + '</span><small>' + NX.esc(r.id) + '</small></button>';
+      }).join('');
+    }).catch(function (e) { box.innerHTML = '<div class="hint">' + NX.esc((e && e.message) || 'Не удалось загрузить игроков') + '</div>'; });
+  };
   NX.bindModals = bindModals;
 })(window.NX);
