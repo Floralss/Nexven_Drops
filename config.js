@@ -1,6 +1,7 @@
 /* Nexven Drop — Firebase (Firestore REST). Rules: see FIREBASE_RULES.txt */
 window.NEXVEN_CFG = {
-  projectId: 'custom-graphics-36c50',
-  database: 'premium',
-  apiKey: 'AIzaSyAPTTDTPzDpKQjpPvze1IBsJQJw74_ua34'
+  projectId: 'novus-roleplay',
+  apiKey: 'AIzaSyCDdPwaB8mH9TsM5hyXFbF0fNpFaWXjmV0',
+  databases: ['(default)'],
+  prefix: 'nx_'
 };
