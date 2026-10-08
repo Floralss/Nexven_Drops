@@ -13,7 +13,7 @@
   function errText(status, body) {
     var m = '';
     try { m = (JSON.parse(body).error || {}).message || ''; } catch (e) {}
-    if (status === 403) return 'Firestore: доступ запрещён (403). Опубликуйте правила из FIREBASE_RULES.txt';
+    if (status === 403) return 'Firestore 403: ' + (m ? m.slice(0, 140) : 'доступ запрещён') + (/referer|blocked|API key|API_KEY/i.test(m) ? ' → в Google Cloud снимите ограничение с ключа' : '');
     if (status === 404) return 'Firestore: база не создана (404). Создайте Firestore Database в консоли';
     if (status === 400) return 'Firestore 400: ' + m.slice(0, 80);
     return 'Firestore ' + status + (m ? ': ' + m.slice(0, 80) : '');
