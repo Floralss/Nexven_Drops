@@ -101,18 +101,47 @@
         '<div class="refbox"><b style="font-size:16px">Приглашай друзей — 2% с пополнения</b><div class="lnk">' + link + '</div>' +
         (rl.length ? rl.map(function (r) { return '<div class="rrow"><span>' + NX.esc(r.name) + '</span><b>' + NX.fmt(r.earned) + ' TON · 2%</b></div>'; }).join('') + '<div style="height:10px"></div>' : '<div class="hint" style="margin-bottom:12px">Пока никого нет</div>') +
         '<button type="button" class="btn green" id="btnRef">Пригласить</button><a class="btn ghost" id="btnSupport" href="https://t.me/nexvendropmananger" target="_blank" rel="noopener" style="margin-top:10px">Поддержка</a></div>' +
+        '<div class="card" style="margin-top:12px"><div class="lab" style="margin:0 0 10px">Промокод</div><div id="profPromo"></div></div>' +
         '<div class="card" style="margin-top:12px"><div class="sw-row"><span>Звуки</span><label class="sw"><input type="checkbox" id="sndOn"' + (NX.isMuted() ? '' : ' checked') + '><i></i></label></div></div>' +
         (staff ? '<button type="button" class="btn gold" id="btnOpenAdmin" style="margin-top:12px">Админ-панель</button>' : '');
       NX.invGrid($('profInv'), u.inventory || [], { onTap: NX.showItem });
+      promoBox($('profPromo'), 'pfPromo');
       $('btnRef').onclick = function () { try { if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link)); else if (navigator.clipboard) { navigator.clipboard.writeText(link); NX.toast('Ссылка скопирована', 'success'); } } catch (e) {} };
       $('sndOn').onchange = function () { NX.setMuted(!this.checked); NX.haptic('select'); };
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
         $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать, забирать и обнулять TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
-        NX.open('modAdmin'); NX.loadAdminPlayers();
+        NX.open('modAdmin'); NX.loadAdminPlayers(); NX.loadPromos();
       };
     }
   };
+
+  /* ===== promo codes: player box (profile + deposit tab) ===== */
+  function promoBox(box, pfx) {
+    box.innerHTML = '<div class="paynote">Введите промокод и получите награду. Один код можно активировать один раз на игрока.</div>' +
+      '<input id="' + pfx + 'In" class="inp" placeholder="ПРОМОКОД" maxlength="24" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:1px" />' +
+      '<button type="button" class="btn" id="' + pfx + 'Go">Активировать</button><div class="hint" id="' + pfx + 'Res" style="margin:10px 2px 0;min-height:18px"></div>';
+    var inp = $(pfx + 'In'), go = $(pfx + 'Go'), res = $(pfx + 'Res'), busy = false;
+    function run() {
+      if (busy) return;
+      var code = NX.net.promoNorm(inp.value);
+      if (!code) { NX.toast('Введите промокод', 'error'); return; }
+      busy = true; go.disabled = true; res.className = 'hint'; res.textContent = 'Проверяю…';
+      NX.net.promoRedeem(code).then(function (r) {
+        busy = false; go.disabled = false; inp.value = '';
+        res.className = 'hint promo-ok'; res.textContent = r.msg;
+        NX.toast(r.msg, 'success'); NX.sfx('win'); NX.haptic('success'); NX.confetti(.8);
+        NX.renderUser();
+        if (NX.cur() === 'profile' && NX.pages.profile.enter) NX.pages.profile.enter();
+      }, function (e) {
+        busy = false; go.disabled = false;
+        res.className = 'hint promo-bad'; res.textContent = (e && e.message) || 'Не удалось активировать';
+        NX.toast(res.textContent, 'error'); NX.haptic('error');
+      });
+    }
+    go.onclick = run;
+    inp.onkeydown = function (e) { if (e.key === 'Enter') run(); };
+  }
 
   /* ===== deposit ===== */
   function payBox(kind) {
@@ -130,12 +159,13 @@
         try { if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink(url); else window.open(url, '_blank'); } catch (e) {}
         NX.close('modPay');
       };
-    } else box.innerHTML = '<div class="paynote" style="background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--m)">Этот способ пополнения скоро появится.</div>';
+    } else if (kind === 'gift') promoBox(box, 'dpPromo');
+    else box.innerHTML = '<div class="paynote" style="background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--m)">Этот способ пополнения скоро появится.</div>';
   }
   function bindModals() {
     $('btnDeposit').onclick = function () { NX.sfx('click'); NX.haptic('light'); payBox('stars'); NX.qa('#pays button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pay') === 'stars'); }); NX.open('modPay'); };
     NX.qa('#pays button').forEach(function (b) {
-      var k = b.getAttribute('data-pay'); if (k !== 'stars') b.classList.add('dim');
+      var k = b.getAttribute('data-pay'); if (k !== 'stars' && k !== 'gift') b.classList.add('dim');
       b.onclick = function () { NX.qa('#pays button').forEach(function (x) { x.classList.toggle('on', x === b); }); payBox(k); NX.haptic('select'); };
     });
 
@@ -187,6 +217,41 @@
     }
     $('btnAdmReset').onclick = function () { doReset(false); };
     $('btnAdmResetAll').onclick = function () { doReset(true); };
+
+    /* ---- promo codes (staff) ---- */
+    var pmGifts = Object.keys(window.GIFTS).filter(function (n) { return !/ TON$/.test(n); }).sort(function (a, b) { return window.GIFTS[a].value - window.GIFTS[b].value; });
+    $('pmItem').innerHTML = pmGifts.map(function (n) { return '<option value="' + NX.esc(n) + '">' + NX.esc(n) + ' — ' + NX.fmt(window.GIFTS[n].value) + ' TON' + (window.GIFTS[n].nft ? ' · NFT' : '') + '</option>'; }).join('');
+    function pmSync() { var t = $('pmType').value; $('pmAmtBox').classList.toggle('hide', t !== 'ton'); $('pmItemBox').classList.toggle('hide', t !== 'item'); }
+    $('pmType').onchange = pmSync; pmSync();
+    function pmMsg(ok, m) { var el = $('pmRes'); el.className = 'hint ' + (ok ? 'promo-ok' : 'promo-bad'); el.textContent = m; }
+    function randCode() { var a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', o = 'NX', i; for (i = 0; i < 6; i++) o += a[NX.randInt(a.length)]; return o; }
+    $('btnPmCreate').onclick = function () {
+      if (!NX.isStaff()) { NX.toast('Только для админов', 'error'); return; }
+      var type = $('pmType').value, amt = parseFloat($('pmAmt').value), code = NX.net.promoNorm($('pmCode').value) || randCode();
+      if (type === 'ton' && (!(amt > 0) || amt > 10000)) { pmMsg(false, 'Сумма TON: от 0.01 до 10000'); return; }
+      if (type === 'ton' && !NX.isOwner() && !NX.PROMO_ADMINS_CAN_TON) { pmMsg(false, 'TON-промокоды может создавать только владелец'); return; }
+      var o = { code: code, type: type, amount: type === 'ton' ? NX.r2(amt) : 0, item: type === 'item' ? $('pmItem').value : '', max: parseInt($('pmMax').value, 10) || 0, days: parseFloat($('pmDays').value) || 0 };
+      pmMsg(true, 'Создаю…'); $('btnPmCreate').disabled = true;
+      NX.net.promoCreate(o).then(function (c) {
+        $('btnPmCreate').disabled = false; $('pmCode').value = '';
+        pmMsg(true, 'Готово! Код: ' + c + ' · ' + NX.net.promoDescribe(o));
+        NX.toast('Промокод создан', 'success'); NX.sfx('win');
+        try { if (navigator.clipboard) navigator.clipboard.writeText(c); } catch (e) {}
+        NX.loadPromos();
+      }, function (e) { $('btnPmCreate').disabled = false; pmMsg(false, (e && e.message) || 'Не удалось создать'); });
+    };
+    $('pmList').onclick = function (e) {
+      var b = e.target.closest('[data-pm]'); if (!b) return;
+      var code = b.getAttribute('data-code'), act = b.getAttribute('data-pm');
+      if (act === 'copy') { try { navigator.clipboard.writeText(code); NX.toast('Скопировано: ' + code, 'success'); } catch (er) {} return; }
+      if (act === 'del') {
+        var q = 'Удалить промокод ' + code + '?';
+        var doDel = function () { NX.net.promoDelete(code).then(function () { NX.toast('Удалён', 'success'); NX.loadPromos(); }, function (er) { pmMsg(false, (er && er.message) || 'Не удалось удалить'); }); };
+        try { if (NX.tg && NX.tg.showConfirm) { NX.tg.showConfirm(q, function (ok) { if (ok) doDel(); }); return; } } catch (er) {}
+        if (window.confirm(q)) doDel(); return;
+      }
+      if (act === 'tg') { NX.net.promoToggle(code, b.getAttribute('data-on') === '1').then(function () { NX.loadPromos(); }, function (er) { pmMsg(false, (er && er.message) || 'Ошибка'); }); }
+    };
     /* player picker (needs shared leaderboard) */
     $('admPick').onclick = function (e) { var r = e.target.closest('[data-pid]'); if (r) { $('admId').value = r.getAttribute('data-pid'); NX.haptic('select'); } };
   }
@@ -199,6 +264,22 @@
         return '<button type="button" class="prow" data-pid="' + NX.esc(r.id) + '"><span>' + (r.online ? '<i class="dot"></i>' : '<i class="dot off"></i>') + NX.esc(r.name) + '</span><small>' + NX.esc(r.id) + '</small></button>';
       }).join('');
     }).catch(function (e) { box.innerHTML = '<div class="hint">' + NX.esc((e && e.message) || 'Не удалось загрузить игроков') + '</div>'; });
+  };
+  NX.loadPromos = function () {
+    var box = $('pmList'); if (!box) return;
+    if (!NX.net.enabled()) { box.innerHTML = '<div class="hint">Нужен Firebase (config.js)</div>'; return; }
+    box.innerHTML = '<div class="hint">Загружаю промокоды…</div>';
+    NX.net.promoList().then(function (list) {
+      if (!list.length) { box.innerHTML = '<div class="hint">Промокодов пока нет</div>'; return; }
+      box.innerHTML = '<div class="lab" style="margin:12px 0 6px">Созданные промокоды (' + list.length + ')</div>' + list.map(function (p) {
+        var exp = p.exp ? (Date.now() > p.exp ? 'истёк' : 'до ' + new Date(p.exp).toLocaleDateString('ru-RU')) : 'бессрочно';
+        var dead = !p.active || (p.exp && Date.now() > p.exp) || (p.max && p.used >= p.max);
+        return '<div class="promo-row' + (dead ? ' off' : '') + '"><div class="pc"><b>' + NX.esc(p.code) + '</b><small>' + NX.esc(NX.net.promoDescribe(p)) + ' · ' + p.used + '/' + (p.max || '∞') + ' · ' + exp + '</small></div>' +
+          '<button type="button" data-pm="copy" data-code="' + NX.esc(p.code) + '">Копия</button>' +
+          '<button type="button" data-pm="tg" data-on="' + (p.active ? 0 : 1) + '" data-code="' + NX.esc(p.code) + '">' + (p.active ? 'Выкл' : 'Вкл') + '</button>' +
+          '<button type="button" class="del" data-pm="del" data-code="' + NX.esc(p.code) + '">✕</button></div>';
+      }).join('');
+    }, function (e) { box.innerHTML = '<div class="hint">' + NX.esc((e && e.message) || 'Не удалось загрузить') + '</div>'; });
   };
   NX.bindModals = bindModals;
 })(window.NX);

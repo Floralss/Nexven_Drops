@@ -48,7 +48,7 @@
     /* apply result up-front (safe if the app is closed mid-animation) */
     var idx = u.inventory.indexOf(it); if (idx >= 0) u.inventory.splice(idx, 1);
     var cons = 0;
-    if (win) { if (tg.cash) u.balance = NX.r2(u.balance + tg.value); else NX.addItem({ name: tg.name, value: tg.value, nft: true }); }
+    if (win) { if (tg.cash) u.balance = NX.r2(u.balance + tg.value); else NX.addItem({ name: tg.name, value: tg.value, nft: !!tg.nft }); }
     else { cons = NX.r2(it.value * 0.02); if (cons > 0) u.balance = NX.r2(u.balance + cons); }
     NX.stat('craft'); NX.save(true);
     var zone = ch * 3.6, fin = win ? zone * (0.1 + NX.rand() * 0.8) : zone + (360 - zone) * (0.06 + NX.rand() * 0.88);

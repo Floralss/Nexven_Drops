@@ -169,6 +169,94 @@
       .catch(function () { polling = false; });
   };
 
+  /* ---------- PROMO CODES (Firestore: nx_promos/{CODE}, nx_promo_uses/{CODE}__{uid}) ----------
+     A code can: give TON ('ton'), give a gift/NFT ('item'), reset the free case ('free').
+     Limits: max total uses (0 = unlimited), expiry date (0 = never), one use per player.
+     Redeeming is ONE atomic Firestore commit (counter +1 and a per-player "used" marker),
+     so a code with max=10 can never be redeemed an 11th time, even if many players press it at once. */
+  var PROMO_RE = /^[A-Z0-9_-]{3,24}$/;
+  net.promoNorm = function (c) { return String(c || '').trim().toUpperCase().replace(/\s+/g, ''); };
+  net.promoValid = function (c) { return PROMO_RE.test(c); };
+  function docPath(coll, id) { return 'projects/' + cfg.projectId + '/databases/' + dbs[dbi] + '/documents/' + C(coll) + '/' + id; }
+  function intOf(f) { return f ? Number(f.integerValue != null ? f.integerValue : f.doubleValue || 0) : 0; }
+  function parsePromo(d) {
+    var f = d.fields || {};
+    return { code: d.name.split('/').pop(), type: str(f.type) || 'ton', amount: num(f.amount), item: str(f.item), max: intOf(f.max), used: intOf(f.used),
+      exp: intOf(f.exp), active: f.active ? !!f.active.booleanValue : true, by: str(f.by), ts: intOf(f.ts), updateTime: d.updateTime };
+  }
+  net.promoDescribe = function (p) {
+    if (p.type === 'item') return 'Подарок: ' + p.item;
+    if (p.type === 'free') return 'Бесплатный кейс';
+    return '+' + NX.fmt(p.amount) + ' TON';
+  };
+  /* -> Promise<{promo, msg}>  rejects with Error(user-readable text) */
+  net.promoRedeem = function (rawCode) {
+    var u = NX.user(), code = net.promoNorm(rawCode);
+    if (!net.enabled()) return Promise.reject(new Error('Промокоды работают через Firebase (config.js)'));
+    if (!net.promoValid(code)) return Promise.reject(new Error('Неверный формат кода'));
+    var attempt = 0;
+    function once() {
+      attempt++;
+      return http(base() + '/' + C('promos') + '/' + encodeURIComponent(code) + '?' + key())
+        .then(function (r) { return r.json(); }, function (e) { if (e && e.status === 404) throw new Error('Такого промокода нет'); throw e; })
+        .then(function (d) {
+          var p = parsePromo(d);
+          if (!p.active) throw new Error('Промокод отключён');
+          if (p.exp && Date.now() > p.exp) throw new Error('Срок действия промокода истёк');
+          if (p.max && p.used >= p.max) throw new Error('Промокод уже закончился');
+          return http(base() + '/' + C('promo_uses') + '/' + encodeURIComponent(code + '__' + u.id) + '?' + key())
+            .then(function () { throw new Error('Вы уже активировали этот промокод'); },
+              function (e) {
+                if (e && e.status !== 404) throw e;
+                var body = { writes: [
+                  { update: { name: docPath('promos', code), fields: { used: { integerValue: String(p.used + 1) } } }, updateMask: { fieldPaths: ['used'] }, currentDocument: { updateTime: p.updateTime } },
+                  { update: { name: docPath('promo_uses', code + '__' + u.id), fields: { code: { stringValue: code }, uid: { stringValue: String(u.id) }, ts: { integerValue: String(Date.now()) } } }, currentDocument: { exists: false } }
+                ] };
+                return http(base() + ':commit?' + key(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                  .then(function () { return p; }, function (er) {
+                    /* somebody redeemed at the same moment -> re-read and try again (max 4 times) */
+                    if (er && (er.status === 409 || er.status === 400 || er.status === 412) && attempt < 4) return once();
+                    throw er;
+                  });
+              });
+        });
+    }
+    return once().then(function (p) {
+      var msg;
+      if (p.type === 'item') { var gi = window.giftInfo(p.item); NX.addItem({ name: p.item, value: gi.value, nft: !!gi.nft }); msg = 'Вы получили: ' + p.item; }
+      else if (p.type === 'free') { u.last_free = 0; msg = 'Бесплатный кейс снова доступен'; }
+      else { NX.credit(p.amount); msg = 'Начислено +' + NX.fmt(p.amount) + ' TON'; }
+      u.stats = u.stats || {}; NX.stat('promos', 1); NX.save(true);
+      return { promo: p, msg: msg };
+    });
+  };
+  net.promoList = function () {
+    var out = [];
+    function page(tok) {
+      return http(base() + '/' + C('promos') + '?pageSize=300&' + key() + (tok ? '&pageToken=' + encodeURIComponent(tok) : '')).then(function (r) { return r.json(); }).then(function (j) {
+        (j.documents || []).forEach(function (d) { out.push(parsePromo(d)); });
+        if (j.nextPageToken && out.length < 1000) return page(j.nextPageToken);
+        out.sort(function (a, b) { return b.ts - a.ts; }); return out;
+      });
+    }
+    return page('');
+  };
+  /* o: {code, type:'ton'|'item'|'free', amount, item, max, days} */
+  net.promoCreate = function (o) {
+    var u = NX.user(), code = net.promoNorm(o.code);
+    if (!net.promoValid(code)) return Promise.reject(new Error('Код: 3-24 символа, A-Z, 0-9, _ или -'));
+    var f = { type: { stringValue: o.type }, amount: { doubleValue: Number(o.amount) || 0 }, item: { stringValue: o.item || '' }, max: { integerValue: String(Math.max(0, parseInt(o.max, 10) || 0)) },
+      used: { integerValue: '0' }, exp: { integerValue: String(o.days > 0 ? Date.now() + o.days * 86400000 : 0) }, active: boolF(true), by: { stringValue: String(u.id) }, ts: { integerValue: String(Date.now()) } };
+    return http(base() + '/' + C('promos') + '/' + encodeURIComponent(code) + '?currentDocument.exists=false&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: f }) })
+      .then(function () { return code; }, function (e) { if (e && (e.status === 409 || e.status === 400 || e.status === 412)) throw new Error('Код ' + code + ' уже существует'); throw e; });
+  };
+  net.promoToggle = function (code, on) {
+    return http(base() + '/' + C('promos') + '/' + encodeURIComponent(code) + '?updateMask.fieldPaths=active&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { active: boolF(on) } }) });
+  };
+  net.promoDelete = function (code) {
+    return http(base() + '/' + C('promos') + '/' + encodeURIComponent(code) + '?' + key(), { method: 'DELETE' });
+  };
+
   net.start = function () {
     if (!net.enabled()) return;
     net.push(true); net.pollGrants();

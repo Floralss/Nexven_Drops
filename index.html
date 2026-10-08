@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=24" />
+  <link rel="stylesheet" href="style.css?v=25" />
 </head>
 <body>
   <div id="loader">
@@ -86,7 +86,7 @@
           <button type="button" data-pay="ton">TON</button>
           <button type="button" data-pay="crypto">Crypto</button>
           <button type="button" data-pay="rub">RUB</button>
-          <button type="button" data-pay="gift">Подарок</button>
+          <button type="button" data-pay="gift">Промокод</button>
         </div>
         <div id="payBox"></div>
       </div>
@@ -110,6 +110,19 @@
           <div id="admRes" class="hint"></div>
           <div id="admPick"></div>
         </div>
+        <div class="lab" style="margin-top:22px">Промокоды</div>
+        <div class="fs">
+          <label>Код (оставь пустым — сгенерируется)</label><input type="text" id="pmCode" placeholder="NEXVEN100" maxlength="24" autocomplete="off" autocapitalize="characters" />
+          <label>Награда</label>
+          <select id="pmType" class="sel"><option value="ton">TON на баланс</option><option value="item">Подарок / NFT</option><option value="free">Сброс бесплатного кейса</option></select>
+          <div id="pmAmtBox" class="fs" style="margin:0"><label>Сумма, TON</label><input type="number" id="pmAmt" value="1" step="0.05" min="0.01" /></div>
+          <div id="pmItemBox" class="fs hide" style="margin:0"><label>Подарок</label><select id="pmItem" class="sel"></select></div>
+          <label>Сколько раз можно активировать (0 = без лимита)</label><input type="number" id="pmMax" value="100" min="0" />
+          <label>Срок действия, дней (0 = бессрочно)</label><input type="number" id="pmDays" value="0" min="0" />
+          <button type="button" class="btn gold" id="btnPmCreate">Создать промокод</button>
+          <div id="pmRes" class="hint"></div>
+          <div id="pmList"></div>
+        </div>
       </div>
     </div>
 
@@ -117,18 +130,18 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="art.js?v=24"></script>
-  <script src="gifts.js?v=24"></script>
-  <script src="config.js?v=24"></script>
-  <script src="core.js?v=24"></script>
-  <script src="cases.js?v=24"></script>
-  <script src="plinko.js?v=24"></script>
-  <script src="mines.js?v=24"></script>
-  <script src="crash.js?v=24"></script>
-  <script src="roulette.js?v=24"></script>
-  <script src="craft.js?v=24"></script>
-  <script src="social.js?v=24"></script>
-  <script src="pages.js?v=24"></script>
-  <script src="main.js?v=24"></script>
+  <script src="art.js?v=25"></script>
+  <script src="config.js?v=25"></script>
+  <script src="gifts.js?v=25"></script>
+  <script src="core.js?v=25"></script>
+  <script src="cases.js?v=25"></script>
+  <script src="plinko.js?v=25"></script>
+  <script src="mines.js?v=25"></script>
+  <script src="crash.js?v=25"></script>
+  <script src="roulette.js?v=25"></script>
+  <script src="craft.js?v=25"></script>
+  <script src="social.js?v=25"></script>
+  <script src="pages.js?v=25"></script>
+  <script src="main.js?v=25"></script>
 </body>
 </html>

@@ -1,0 +1,36 @@
+ЭКОНОМИКА v25  (курс: 100 Stars = 1 TON, всё считается от config.js -> starsPerTon)
+
+== ОБЫЧНЫЕ ПОДАРКИ (цена в Stars -> TON) ==
+  Сердце        15 Stars  ->  0.15 TON
+  Мишка         15 Stars  ->  0.15 TON
+  Подарок       25 Stars  ->  0.25 TON
+  Роза          25 Stars  ->  0.25 TON
+  Торт          50 Stars  ->  0.5 TON
+  Букет         50 Stars  ->  0.5 TON
+  Ракета        50 Stars  ->  0.5 TON
+  Бутылка       50 Stars  ->  0.5 TON
+  Ёлка          50 Stars  ->  0.5 TON
+  Санта         50 Stars  ->  0.5 TON
+  Тыква         50 Stars  ->  0.5 TON
+  Кубок        100 Stars  ->  1 TON
+  Кольцо       100 Stars  ->  1 TON
+  Алмаз        100 Stars  ->  1 TON
+  Крошка         5 Stars  ->  0.05 TON
+  Наклейка       5 Stars  ->  0.05 TON
+
+== КЭШ-ПРИЗЫ ==  0.05 TON, 0.1 TON, 0.25 TON, 0.5 TON, 1 TON, 2 TON, 5 TON, 10 TON, 25 TON
+
+== NFT (99 шт., цена в TON; * = добавлено в v25, цена-оценка, сверь с рынком) ==
+Ice Cream 3 | Santa Hat 3 | Candy Cane 3.5 | Snow Mittens 3.5 | Easter Egg 4 | Ginger Cookie 4 | B-Day Candle 4 | Desk Calendar 4 | Jingle Bells 4 | Spiced Wine 4 | *Pool Float 4 | Lol Pop 4.5 | Hanging Star 5 | Bunny Muffin 5 | Homemade Cake 5 | Love Candle 5 | Winter Wreath 5 | Xmas Stocking 5 | Star Notepad 5 | *Spring Basket 5 | *Happy Brownie 5 | *Eternal Candle 5 | Toy Bear 6 | Cookie Heart 6 | Berry Box 6 | Hypno Lollipop 6 | Party Sparkler 6 | Lunar Snake 6 | Whip Cupcake 6 | Holiday Drink 6 | *Fresh Socks 6 | *Lush Bouquet 6 | *Joyful Bundle 6 | *Money Pot 6 | *Snow Globe 6 | *Tama Gadget 6 | Jack-in-the-Box 6.5 | Pet Snake 7 | Sakura Flower 7 | Big Year 7 | *Swag Bag 7 | *Victory Medal 7 | Sleigh Bell 8 | Snake Box 8 | Light Sword 8 | Witch Hat 8 | *Snoop Dogg 8 | *Moon Pendant 8 | Jester Hat 9 | Instant Ramen 9 | Restless Jar 10 | Jelly Bunny 10 | Input Key 10 | *Ionic Dryer 10 | Top Hat 11 | Spy Agaric 12 | Evil Eye 12 | Hex Pot 12 | *Snoop Cigar 12 | Kissed Frog 14 | Scared Cat 14 | *Low Rider 16 | Trapped Heart 18 | Vice Cream 18 | Astral Shard 20 | *Cupid Charm 20 | Skull Flower 22 | *Westside Sign 24 | Record Player 25 | Flying Broom 26 | Eternal Rose 27 | Vintage Cigar 28 | Love Potion 28 | *Bling Binky 28 | Magic Potion 30 | Bow Tie 30 | Voodoo Doll 32 | Crystal Ball 36 | Bonded Ring 38 | Sharp Tongue 40 | Electric Skull 40 | *Gem Signet 42 | Genie Lamp 45 | Mad Pumpkin 45 | Signet Ring 55 | *Mighty Arm 55 | Ion Gem 68 | Perfume Bottle 70 | *Nail Bracelet 85 | Diamond Ring 90 | Swiss Watch 110 | Neko Helmet 120 | Mini Oscar 150 | Loot Bag 190 | *Heroic Helmet 280 | Precious Peach 330 | Durov's Cap 600 | Heart Locket 2000 | Plush Pepe 5100
+
+== КЕЙСЫ (RTP ~90%, «окупаемость» = шанс выбить предмет на сумму >= цены кейса) ==
+free      price     0 n  24 sum 100.000 EV 0.200 RTP - P>=price 100.0% P>=2x 100.0% P>=5x 100.00% 
+dust      price   0.5 n  28 sum 100.000 EV 0.450 RTP 90.0% P>=price 37.0% P>=2x 11.9% P>=5x 4.14% 
+selected  price   1.5 n  37 sum 100.000 EV 1.350 RTP 90.0% P>=price 36.0% P>=2x 26.9% P>=5x 0.46% 
+half      price     3 n  54 sum 100.000 EV 2.700 RTP 90.0% P>=price 34.0% P>=2x 19.3% P>=5x 1.91% 
+candy     price     5 n  54 sum 100.000 EV 4.500 RTP 90.0% P>=price 35.0% P>=2x 12.4% P>=5x 2.95% 
+cake      price     8 n  52 sum 100.000 EV 7.200 RTP 90.0% P>=price 34.0% P>=2x 10.2% P>=5x 1.02% 
+royal     price    15 n  50 sum 100.000 EV 13.499 RTP 90.0% P>=price 32.0% P>=2x 5.6% P>=5x 0.15% 
+diamond   price    30 n  43 sum 100.000 EV 27.005 RTP 90.0% P>=price 27.0% P>=2x 2.5% P>=5x 0.28% 
+
+Цены кейсов: Daily 0 | Poronomal 0.5 | Chromical 1.5 | 50|50 3 | Candy 5 | Cake 8 | Royal 15 | Diamond 30   (было: 0 | 1 | 3 | 5 | 6 | 8 | 15 | 25)

@@ -1,14 +1,46 @@
-КУРС STARS -> TON (делается в КОДЕ БОТА, в zip его нет)
+СРОЧНЫЙ БАГ «100 Stars = 100 TON» — ИСПРАВЛЯЕТСЯ В КОДЕ БОТА (в zip его нет)
 
-Мини-апп теперь показывает курс 100 Stars = 1 TON (config.js -> starsPerTon) и открывает бота ссылкой ?start=pay_<кол-во Stars>.
-Бот должен считать TON из Stars по тому же курсу, а не 1:1:
+Мини-апп уже считает правильно: 100 Stars = 1 TON (config.js -> starsPerTon: 100). Он показывает «Вы получите 1 TON»
+и открывает бота ссылкой ?start=pay_<кол-во Stars>.
+Бот сейчас делает «баланс += stars» — отсюда и «100 Stars = 100 TON». Нужно везде в боте делить на 100.
+
+ПРАВИЛО (во ВСЕХ местах бота, где stars превращаются в TON):
+    STARS_PER_TON = 100
+    ton = round(stars / STARS_PER_TON, 2)      # 100★ -> 1 TON, 250★ -> 2.5, 15★ -> 0.15
+
+ЧТО ПРАВИТЬ В БОТЕ
+ 1) Обработчик /start pay_<stars>: счёт (invoice) остаётся в Stars (amount = stars),
+    а в тексте/названии пиши:  f"Пополнение {stars/100:g} TON"   (было: f"{stars} TON").
+ 2) successful_payment: баланс игрока += stars / 100  (а НЕ += stars). Потом ссылка в мини-апп:
+    открывай мини-апп с синхронизацией так же, как делал раньше, но число теперь дробное:
+        start_param  sync_12_5   (подчёркивание = точка, 12.5 TON)     или   ?sync=12.5
+ 3) Минимальная сумма: 100 Stars (мини-апп не даёт меньше).
+ 4) Реферальные 2% считай от TON (stars/100), а не от Stars.
+ 5) Если бот хранит баланс игрока у себя — те, кого уже «пополнили» по старому курсу, получили лишние TON:
+    пересчитай/обнули их (владелец может в Админ-панели -> «Забрать TON» / «Обнулить баланс»).
+
+ГОТОВЫЙ КОД (python-telegram-bot / aiogram — логика одинакова):
 
     STARS_PER_TON = 100
-    ton = stars / STARS_PER_TON          # 100 Stars -> 1 TON, 250 -> 2.5, 1000 -> 10
 
-1) В счёте (invoice) цена остаётся в Stars (amount = stars), а в тексте пиши: "Top up {ton} TON".
-2) После successful_payment: баланс += stars / STARS_PER_TON (а не += stars).
-3) Ссылка на мини-апп с синхронизацией баланса теперь может быть дробной:
-      ?sync=12.5            или start_param  sync_12_5   (подчёркивание = точка)
-   Раньше парсился только integer.
-4) Если бот хранит баланс игрока у себя — обнули его там тоже, иначе при следующей sync-ссылке старое число вернётся.
+    def stars_to_ton(stars: int) -> float:
+        return round(stars / STARS_PER_TON, 2)
+
+    # при создании счёта
+    ton = stars_to_ton(stars)
+    await bot.send_invoice(chat_id, title=f"Пополнение {ton:g} TON", description=f"{stars} Stars = {ton:g} TON",
+                           payload=f"dep_{user_id}_{stars}", currency="XTR", prices=[LabeledPrice("Stars", stars)])
+
+    # после успешной оплаты
+    stars = message.successful_payment.total_amount        # для XTR это число звёзд
+    ton = stars_to_ton(stars)
+    db_add_balance(user_id, ton)                           # <-- было stars
+    sync_param = "sync_" + str(round(db_get_balance(user_id), 2)).replace(".", "_")   # start_param для мини-аппа
+
+То же на JS (Telegraf / grammY):
+
+    const STARS_PER_TON = 100;
+    const starsToTon = s => Math.round(s / STARS_PER_TON * 100) / 100;
+    // ctx.message.successful_payment.total_amount -> stars; addBalance(userId, starsToTon(stars));
+
+Если пришлёшь код бота — поправлю сам.

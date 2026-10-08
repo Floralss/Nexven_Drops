@@ -72,6 +72,8 @@
       if (started) return; started = true;
       var b = newest(); if (b) NX.unpack(b, user);
       applyDeepLink(user);
+      /* v25: re-price items the player already owns by the current catalog (gifts.js), so old prices can't be farmed. Items on withdrawal keep their price. */
+      try { (user.inventory || []).forEach(function (it) { var g = window.GIFTS && window.GIFTS[it.name]; if (g && it.status !== 'withdrawing' && it.value !== g.value) { it.value = g.value; it.nft = !!g.nft; } }); } catch (e) {}
       prog(75);
       var order = ['games', 'cases', 'top', 'profile', 'plinko', 'mines', 'crash', 'roulette', 'craft'], main = $('main');
       order.forEach(function (n) { var s = document.createElement('section'); s.className = 'view'; s.id = 'v-' + n; main.appendChild(s); });

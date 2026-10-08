@@ -32,7 +32,7 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 #main{padding:calc(76px + env(safe-area-inset-top,0px)) 14px calc(var(--dock-h) + 36px + env(safe-area-inset-bottom,0px))}
 .view{display:none}
 .view.on{display:block;animation:viewIn .42s var(--ease) both}
-.view.back.on{animation-name:viewInBack}
+.view.vback.on{animation-name:viewInBack}
 @keyframes viewIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes viewInBack{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 
@@ -118,8 +118,8 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 
 /* page header inside games */
 .phead{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
-.back{width:42px;height:42px;border-radius:14px;background:#171a24;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;transition:transform .2s var(--spring)}
-.back:active{transform:scale(.88)}
+.phead .back{width:42px;height:42px;border-radius:14px;background:#171a24;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;transition:transform .2s var(--spring)}
+.phead .back:active{transform:scale(.88)}
 .ptitle{font-size:21px;font-weight:900;letter-spacing:.3px}
 .psub{font-size:12.5px;color:var(--m);margin-top:1px}
 .phead .rt{margin-left:auto}
@@ -442,3 +442,15 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 .prow span{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prow small{color:var(--m);font-weight:600}
 #admPick{max-height:200px;overflow-y:auto}
+
+/* ---------- v25: promo codes, selects ---------- */
+.sel{width:100%;background:#0f1118;border:1px solid var(--line2);border-radius:14px;padding:13px 14px;font-size:15px;color:inherit;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238d94a8' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.sel:focus{border-color:var(--blue)}
+.promo-row{display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;border-radius:12px;background:#1b1f2b;border:1px solid var(--line);font-size:13px}
+.promo-row .pc{flex:1;min-width:0}
+.promo-row .pc b{font-size:14px;letter-spacing:.5px;display:block;overflow:hidden;text-overflow:ellipsis}
+.promo-row .pc small{color:var(--m);font-weight:600;display:block;margin-top:2px}
+.promo-row button{height:34px;padding:0 11px;border-radius:10px;background:#252a3a;border:1px solid var(--line2);font-size:12px;font-weight:800}
+.promo-row.off{opacity:.55}
+.promo-row .del{color:#ff7a88}
+.promo-ok{color:var(--green)!important}.promo-bad{color:#ff7a88!important}

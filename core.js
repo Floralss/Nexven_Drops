@@ -14,6 +14,8 @@
   NX.OWNER_ID = 8920532333;
   NX.ADMIN_IDS = [7064801154, 8866989412];
   NX.BOT = 'nexvendrop_bot';
+  /* promo codes: true = every admin can create TON codes; false = only the owner (admins can still create gift / free-case codes) */
+  NX.PROMO_ADMINS_CAN_TON = true;
   var LS = 'iz_v6_', CS_KEY = 'iz_user_v6';
 
   /* ---------- tiny helpers ---------- */
@@ -320,9 +322,9 @@
     var from = cur;
     try { if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave(); } catch (e) { console.error(e); }
     cur = name;
-    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
+    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'vback'); });
     var v = $('v-' + name);
-    if (opt.back) v.classList.add('back');
+    if (opt.back) v.classList.add('vback');
     void v.offsetWidth; v.classList.add('on');
     var tab = TAB_OF[name];
     NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
