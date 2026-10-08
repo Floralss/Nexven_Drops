@@ -51,8 +51,8 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
 
 /* ---------- dock ---------- */
-.dock{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:calc(100% - 28px);max-width:420px;height:var(--dock-h);z-index:50;display:grid;grid-template-columns:repeat(5,1fr);padding:7px;border-radius:26px;background:rgba(22,25,34,.82);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid var(--line2);box-shadow:0 14px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
-.dock-glow{position:absolute;top:7px;bottom:7px;left:7px;width:calc((100% - 14px)/5);border-radius:19px;background:linear-gradient(180deg,rgba(47,123,255,.26),rgba(47,123,255,.12));border:1px solid rgba(90,162,255,.38);box-shadow:0 0 26px rgba(47,123,255,.3);transition:transform .5s var(--spring)}
+.dock{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:calc(100% - 28px);max-width:420px;height:var(--dock-h);z-index:50;display:grid;grid-template-columns:repeat(4,1fr);padding:7px;border-radius:26px;background:rgba(22,25,34,.82);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid var(--line2);box-shadow:0 14px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+.dock-glow{position:absolute;top:7px;bottom:7px;left:7px;width:calc((100% - 14px)/4);border-radius:19px;background:linear-gradient(180deg,rgba(47,123,255,.26),rgba(47,123,255,.12));border:1px solid rgba(90,162,255,.38);box-shadow:0 0 26px rgba(47,123,255,.3);transition:transform .5s var(--spring)}
 .nb{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;color:#8f97ad;transition:color .3s,transform .25s var(--spring)}
 .nb:active{transform:scale(.88)}
 .nb.on{color:#fff}
@@ -126,7 +126,7 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 
 /* ---------- main menu: game banners ---------- */
 .banners{display:flex;flex-direction:column;gap:14px}
-.banner{position:relative;display:block;width:100%;height:152px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .35s var(--spring),box-shadow .3s;text-align:left;isolation:isolate;opacity:1;animation:cardIn .6s var(--ease) both}
+.banner{position:relative;display:block;width:100%;height:152px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .35s var(--spring),box-shadow .3s;text-align:left;isolation:isolate;opacity:0;animation:cardIn .6s var(--ease) forwards}
 .banner:active{transform:scale(.97)}
 .banner svg.bn{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
 .banner::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,7,12,.78),rgba(6,7,12,0) 62%),linear-gradient(0deg,rgba(6,7,12,.5),transparent 45%);pointer-events:none}
@@ -437,18 +437,8 @@ svg.ton{display:inline-block;vertical-align:middle;flex:none;filter:drop-shadow(
 .skel{height:72px;border-radius:20px;margin-bottom:9px;background:linear-gradient(100deg,#161922 30%,#1f2430 50%,#161922 70%);background-size:200% 100%;animation:skl 1.2s linear infinite}
 @keyframes skl{from{background-position:200% 0}to{background-position:-200% 0}}
 
-/* ---------- promo tab / withdraw card ---------- */
-.pr-card{text-align:center;padding:22px 16px}
-.pr-ic{width:60px;height:60px;margin:0 auto 10px;border-radius:20px;display:flex;align-items:center;justify-content:center;color:#34f0ac;background:rgba(43,227,160,.1);border:1px solid rgba(43,227,160,.25)}
-.pr-t{font-size:20px;font-weight:900;margin-bottom:6px}
-.pr-card .inp{text-align:center;letter-spacing:1.5px;text-transform:uppercase}
-.pr-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;margin-bottom:8px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
-.pr-l{display:flex;flex-direction:column;gap:2px;min-width:0}
-.pr-l b{font-size:15px;letter-spacing:.5px}
-.pr-l small{color:var(--m);font-size:12.5px}
-.pr-row>span{color:var(--m);font-size:12px;white-space:nowrap}
-.wdcard{margin-top:12px}
-.wdcard .wd-t{font-size:16px;font-weight:900;margin-bottom:4px}
-.wdcard .wd-t i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:#ff6577}
-.wdcard.on .wd-t i{background:var(--green)}
-.wdcard .btn{margin-top:10px}
+.dot.off{background:#4a5066;animation:none;box-shadow:none}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px 12px;margin-bottom:6px;border-radius:12px;background:#1b1f2b;border:1px solid var(--line);font-weight:700;font-size:13.5px;text-align:left}
+.prow span{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow small{color:var(--m);font-weight:600}
+#admPick{max-height:200px;overflow-y:auto}

@@ -3,126 +3,368 @@
   'use strict';
   var $ = NX.$, ART = window.ART;
 
-  /* ===== CASE DATA (names / prices / odds unchanged) ===== */
+  /* ===== CASE DATA =====
+     Every prize takes its price (TON) from gifts.js, so one table controls the whole economy.
+     Pools are tuned to ~90% return-to-player: about 30-45% of openings pay back the case price,
+     cheap gifts/NFTs are common, expensive NFTs stay rare. Chances in each case sum to 100%. */
+  function P(name, chance) { var g = window.GIFTS[name] || { value: 0.1, nft: false }; return { name: name, value: g.value, chance: chance, nft: !!g.nft }; }
   var CASES = {
-    free: { id: 'free', name: 'Daily case', price: 0, desc: 'Раз в 24 часа', prizes: [
-      { name: 'Мишка', value: 0.05, chance: 48 }, { name: 'Сердце', value: 0.08, chance: 32 }, { name: '1 TON', value: 1, chance: 18 },
-      { name: 'Крошка', value: 0.05, chance: 1.5 }, { name: 'Наклейка', value: 0.05, chance: 0.48 },
-      { name: 'Plush Pepe', value: 900, chance: 0.01, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.005, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.003, nft: true },
-      { name: 'Astral Shard', value: 800, chance: 0.002, nft: true }
+    free: { id: 'free', name: "Daily case", price: 0, desc: "Раз в 24 часа", prizes: [
+      P("Мишка", 25.978),
+      P("Сердце", 26),
+      P("Подарок", 10),
+      P("Роза", 10),
+      P("0.5 TON", 4.4),
+      P("Букет", 4.4),
+      P("Бутылка", 4.4),
+      P("Ракета", 4.4),
+      P("Торт", 4.4),
+      P("1 TON", 1.38),
+      P("Алмаз", 1.38),
+      P("Кольцо", 1.38),
+      P("Кубок", 1.38),
+      P("2 TON", 0.113),
+      P("Ice Cream", 0.113),
+      P("Santa Hat", 0.113),
+      P("Candy Cane", 0.113),
+      P("Lol Pop", 0.025),
+      P("Toy Bear", 0.025)
     ] },
-    dust: { id: 'dust', name: 'Poronomal case', price: 0.8, desc: 'Мишки и сердца', prizes: [
-      { name: 'Мишка', value: 0.12, chance: 42 }, { name: 'Сердце', value: 0.16, chance: 30 }, { name: '1 TON', value: 1, chance: 20 },
-      { name: 'Toy Bear', value: 15, chance: 5 }, { name: 'Eternal Rose', value: 25, chance: 2.7 },
-      { name: 'Ice Cream', value: 505, chance: 0.12, nft: true },
-      { name: 'Santa Hat', value: 500, chance: 0.08, nft: true },
-      { name: 'Snow Mittens', value: 500, chance: 0.05, nft: true },
-      { name: 'Jack-in-the-Box', value: 500, chance: 0.03, nft: true },
-      { name: 'Top Hat', value: 530, chance: 0.02, nft: true }
+    dust: { id: 'dust', name: "Poronomal case", price: 1, desc: "Милые подарки и первые NFT", prizes: [
+      P("Мишка", 11.097),
+      P("Сердце", 11.05),
+      P("Подарок", 11.05),
+      P("Роза", 11.05),
+      P("0.5 TON", 5.18),
+      P("Букет", 5.18),
+      P("Бутылка", 5.18),
+      P("Ракета", 5.18),
+      P("Торт", 5.18),
+      P("1 TON", 4.48),
+      P("Алмаз", 4.48),
+      P("Кольцо", 4.48),
+      P("Кубок", 4.48),
+      P("2 TON", 1.59),
+      P("Ice Cream", 1.59),
+      P("Santa Hat", 1.59),
+      P("Candy Cane", 1.59),
+      P("Snow Mittens", 1.59),
+      P("Easter Egg", 0.598),
+      P("Lol Pop", 0.598),
+      P("5 TON", 0.598),
+      P("Hypno Lollipop", 0.598),
+      P("Lunar Snake", 0.149),
+      P("Toy Bear", 0.598),
+      P("Jack-in-the-Box", 0.149),
+      P("Sakura Flower", 0.149),
+      P("Light Sword", 0.149),
+      P("Witch Hat", 0.149),
+      P("Jester Hat", 0.149),
+      P("Astral Shard", 0.033),
+      P("Eternal Rose", 0.033),
+      P("Vintage Cigar", 0.033)
     ] },
-    selected: { id: 'selected', name: 'Chromical case', price: 2.4, desc: 'Редкие плюши', prizes: [
-      { name: 'Мишка', value: 0.2, chance: 38 }, { name: 'Сердце', value: 0.3, chance: 28 }, { name: '1 TON', value: 1, chance: 20 },
-      { name: 'Cookie Heart', value: 50, chance: 8 }, { name: 'B-Day Candle', value: 50, chance: 5.5 },
-      { name: 'Crystal Ball', value: 666, chance: 0.15, nft: true },
-      { name: 'Magic Potion', value: 600, chance: 0.12, nft: true },
-      { name: 'Genie Lamp', value: 650, chance: 0.1, nft: true },
-      { name: 'Voodoo Doll', value: 655, chance: 0.06, nft: true },
-      { name: 'Flying Broom', value: 650, chance: 0.04, nft: true },
-      { name: 'Witch Hat', value: 550, chance: 0.02, nft: true },
-      { name: 'Scared Cat', value: 721, chance: 0.007, nft: true },
-      { name: 'Kissed Frog', value: 721, chance: 0.003, nft: true }
+    selected: { id: 'selected', name: "Chromical case", price: 3, desc: "Подарки и недорогие NFT", prizes: [
+      P("Мишка", 3.19),
+      P("Сердце", 3.2),
+      P("Подарок", 3.2),
+      P("Роза", 3.2),
+      P("0.5 TON", 4.25),
+      P("Букет", 4.25),
+      P("Бутылка", 4.25),
+      P("Ракета", 4.25),
+      P("Торт", 4.25),
+      P("1 TON", 4.75),
+      P("Алмаз", 4.75),
+      P("Кольцо", 4.75),
+      P("Кубок", 4.75),
+      P("Ice Cream", 4.47),
+      P("Santa Hat", 4.47),
+      P("Candy Cane", 4.47),
+      P("Snow Mittens", 4.47),
+      P("Jingle Bells", 4.47),
+      P("Spiced Wine", 4.47),
+      P("5 TON", 4.47),
+      P("Hanging Star", 1.68),
+      P("Homemade Cake", 1.68),
+      P("Berry Box", 1.68),
+      P("Cookie Heart", 1.68),
+      P("Hypno Lollipop", 1.68),
+      P("Toy Bear", 1.68),
+      P("Jack-in-the-Box", 0.745),
+      P("Witch Hat", 0.745),
+      P("Jester Hat", 0.745),
+      P("10 TON", 0.745),
+      P("Top Hat", 0.745),
+      P("Evil Eye", 0.745),
+      P("Kissed Frog", 0.252),
+      P("Scared Cat", 0.252),
+      P("Trapped Heart", 0.252),
+      P("Astral Shard", 0.252),
+      P("Eternal Rose", 0.028),
+      P("Magic Potion", 0.028),
+      P("Genie Lamp", 0.028),
+      P("Signet Ring", 0.028)
     ] },
-    half: { id: 'half', name: '50|50 case', price: 5, desc: 'Мишка или NFT', prizes: [
-      { name: 'Мишка', value: 0.4, chance: 97.5 },
-      { name: 'Plush Pepe', value: 900, chance: 0.5, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.4, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.3, nft: true },
-      { name: 'Spy Agaric', value: 814, chance: 0.3, nft: true },
-      { name: 'Jelly Bunny', value: 721, chance: 0.25, nft: true },
-      { name: 'Trapped Heart', value: 690, chance: 0.25, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.2, nft: true },
-      { name: 'Vintage Cigar', value: 700, chance: 0.15, nft: true },
-      { name: 'Signet Ring', value: 700, chance: 0.15, nft: true }
+    half: { id: 'half', name: "50|50 case", price: 5, desc: "Подарок или NFT", prizes: [
+      P("Мишка", 4.303),
+      P("Сердце", 4.22),
+      P("Подарок", 4.22),
+      P("Роза", 4.22),
+      P("0.5 TON", 3.24),
+      P("Букет", 3.24),
+      P("Бутылка", 3.24),
+      P("Ракета", 3.24),
+      P("Торт", 3.24),
+      P("1 TON", 3.04),
+      P("Алмаз", 3.04),
+      P("Кольцо", 3.04),
+      P("Кубок", 3.04),
+      P("2 TON", 4.05),
+      P("Ice Cream", 1.01),
+      P("Santa Hat", 1.01),
+      P("Candy Cane", 1.01),
+      P("Snow Mittens", 1.01),
+      P("Spiced Wine", 1.01),
+      P("Lol Pop", 1.01),
+      P("5 TON", 3.04),
+      P("Bunny Muffin", 3.04),
+      P("Hanging Star", 3.04),
+      P("Berry Box", 3.04),
+      P("Cookie Heart", 3.04),
+      P("Hypno Lollipop", 3.04),
+      P("Lunar Snake", 3.04),
+      P("Party Sparkler", 3.04),
+      P("Toy Bear", 3.04),
+      P("Whip Cupcake", 3.04),
+      P("Jester Hat", 1.18),
+      P("10 TON", 1.18),
+      P("Jelly Bunny", 1.18),
+      P("Top Hat", 1.18),
+      P("Evil Eye", 1.18),
+      P("Hex Pot", 1.18),
+      P("Spy Agaric", 1.18),
+      P("Kissed Frog", 1.18),
+      P("Scared Cat", 1.18),
+      P("Trapped Heart", 0.507),
+      P("Astral Shard", 0.507),
+      P("Skull Flower", 0.507),
+      P("Flying Broom", 0.507),
+      P("Eternal Rose", 0.507),
+      P("Vintage Cigar", 0.507),
+      P("Magic Potion", 0.091),
+      P("Crystal Ball", 0.091),
+      P("Genie Lamp", 0.091),
+      P("Signet Ring", 0.091),
+      P("Perfume Bottle", 0.091),
+      P("Diamond Ring", 0.025),
+      P("Mini Oscar", 0.025),
+      P("Plush Pepe", 0.0002)
     ] },
-    cake: { id: 'cake', name: 'Cake case', price: 8, desc: 'Конфеты, мишки, сердца', prizes: [
-      { name: 'Мишка', value: 0.3, chance: 30 }, { name: 'Сердце', value: 0.4, chance: 24 }, { name: '1 TON', value: 1, chance: 18 },
-      { name: 'Homemade Cake', value: 50, chance: 12 }, { name: 'Berry Box', value: 50, chance: 9 },
-      { name: 'Love Candle', value: 50, chance: 5 }, { name: 'Desk Calendar', value: 50, chance: 1.7 },
-      { name: 'Candy Cane', value: 500, chance: 0.1, nft: true },
-      { name: 'Ice Cream', value: 505, chance: 0.08, nft: true },
-      { name: 'Hypno Lollipop', value: 544, chance: 0.05, nft: true },
-      { name: 'Lunar Snake', value: 549, chance: 0.03, nft: true },
-      { name: 'Jester Hat', value: 550, chance: 0.02, nft: true },
-      { name: 'Party Sparkler', value: 587, chance: 0.01, nft: true },
-      { name: 'Bunny Muffin', value: 510, chance: 0.005, nft: true },
-      { name: 'Spiced Wine', value: 500, chance: 0.003, nft: true },
-      { name: 'Evil Eye', value: 550, chance: 0.0015, nft: true },
-      { name: 'Hex Pot', value: 550, chance: 0.001, nft: true },
-      { name: 'Skull Flower', value: 600, chance: 0.0003, nft: true },
-      { name: 'Sharp Tongue', value: 600, chance: 0.0002, nft: true }
+    candy: { id: 'candy', name: "Candy case", price: 6, desc: "Сладкие NFT и подарки", prizes: [
+      P("0.5 TON", 5.892),
+      P("Букет", 5.77),
+      P("Бутылка", 5.77),
+      P("Ракета", 5.77),
+      P("Торт", 5.77),
+      P("1 TON", 3.31),
+      P("Алмаз", 3.31),
+      P("Кольцо", 3.31),
+      P("Кубок", 3.31),
+      P("2 TON", 1.98),
+      P("Ice Cream", 1.98),
+      P("Santa Hat", 1.98),
+      P("Candy Cane", 1.98),
+      P("Snow Mittens", 1.98),
+      P("Easter Egg", 1.5),
+      P("Ginger Cookie", 1.5),
+      P("Lol Pop", 1.5),
+      P("5 TON", 1.5),
+      P("Homemade Cake", 1.5),
+      P("Cookie Heart", 1.5),
+      P("Holiday Drink", 1.5),
+      P("Hypno Lollipop", 1.5),
+      P("Lunar Snake", 1.5),
+      P("Party Sparkler", 1.5),
+      P("Whip Cupcake", 1.5),
+      P("Jack-in-the-Box", 2.02),
+      P("Pet Snake", 2.02),
+      P("Sakura Flower", 2.02),
+      P("Light Sword", 2.02),
+      P("Witch Hat", 2.02),
+      P("Jester Hat", 2.02),
+      P("10 TON", 2.02),
+      P("Jelly Bunny", 2.02),
+      P("Top Hat", 2.02),
+      P("Evil Eye", 1.98),
+      P("Spy Agaric", 1.98),
+      P("Kissed Frog", 1.98),
+      P("Scared Cat", 1.98),
+      P("Trapped Heart", 1.98),
+      P("Astral Shard", 0.562),
+      P("Skull Flower", 0.562),
+      P("Eternal Rose", 0.562),
+      P("Love Potion", 0.562),
+      P("Vintage Cigar", 0.562),
+      P("Magic Potion", 0.114),
+      P("Signet Ring", 0.114),
+      P("Ion Gem", 0.114),
+      P("Perfume Bottle", 0.114),
+      P("Diamond Ring", 0.021),
+      P("Swiss Watch", 0.021)
     ] },
-    neon: { id: 'neon', name: 'Neon Vault', price: 15, desc: 'Кольца, бутылки, свечи', prizes: [
-      { name: 'Мишка', value: 0.5, chance: 28 }, { name: 'Сердце', value: 0.6, chance: 22 }, { name: '2 TON', value: 2, chance: 18 },
-      { name: 'Love Candle', value: 50, chance: 12 }, { name: 'Cookie Heart', value: 50, chance: 10 },
-      { name: 'Eternal Rose', value: 25, chance: 7 },
-      { name: 'Signet Ring', value: 700, chance: 0.8, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.7, nft: true },
-      { name: 'Vintage Cigar', value: 700, chance: 0.5, nft: true },
-      { name: 'Spiced Wine', value: 500, chance: 0.4, nft: true },
-      { name: 'Trapped Heart', value: 690, chance: 0.25, nft: true },
-      { name: 'Hanging TON', value: 505, chance: 0.2, nft: true },
-      { name: 'Astral Shard', value: 800, chance: 0.1, nft: true },
-      { name: 'Plush Pepe', value: 900, chance: 0.04, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.01, nft: true }
+    cake: { id: 'cake', name: "Cake case", price: 8, desc: "Подарки, конфеты и NFT", prizes: [
+      P("0.5 TON", 3.367),
+      P("Букет", 3.33),
+      P("Бутылка", 3.33),
+      P("Ракета", 3.33),
+      P("Торт", 3.33),
+      P("1 TON", 3.88),
+      P("Алмаз", 3.88),
+      P("Кольцо", 3.88),
+      P("Кубок", 3.88),
+      P("2 TON", 2.26),
+      P("B-Day Candle", 2.26),
+      P("5 TON", 1.94),
+      P("Bunny Muffin", 1.94),
+      P("Homemade Cake", 2.26),
+      P("Love Candle", 2.26),
+      P("Berry Box", 2.26),
+      P("Cookie Heart", 2.26),
+      P("Holiday Drink", 1.94),
+      P("Hypno Lollipop", 1.94),
+      P("Party Sparkler", 1.94),
+      P("Toy Bear", 1.94),
+      P("Whip Cupcake", 1.94),
+      P("Light Sword", 2.11),
+      P("Sleigh Bell", 2.11),
+      P("Snake Box", 2.11),
+      P("Witch Hat", 2.11),
+      P("Instant Ramen", 2.11),
+      P("Jester Hat", 2.11),
+      P("10 TON", 2.11),
+      P("Input Key", 2.11),
+      P("Jelly Bunny", 2.11),
+      P("Restless Jar", 2.11),
+      P("Top Hat", 2.11),
+      P("Evil Eye", 1.8),
+      P("Hex Pot", 1.8),
+      P("Spy Agaric", 1.8),
+      P("Kissed Frog", 1.8),
+      P("Scared Cat", 1.8),
+      P("Trapped Heart", 1.8),
+      P("Vice Cream", 1.8),
+      P("Astral Shard", 0.775),
+      P("Skull Flower", 0.775),
+      P("Record Player", 0.775),
+      P("Eternal Rose", 0.775),
+      P("Vintage Cigar", 0.775),
+      P("Magic Potion", 0.206),
+      P("Voodoo Doll", 0.206),
+      P("Signet Ring", 0.206),
+      P("Perfume Bottle", 0.206),
+      P("Diamond Ring", 0.048),
+      P("Mini Oscar", 0.048),
+      P("Precious Peach", 0.048)
     ] },
-    legend: { id: 'legend', name: 'Legend case', price: 35, desc: 'Тяжёлые NFT и подарки', prizes: [
-      { name: 'Мишка', value: 1, chance: 25 }, { name: 'Сердце', value: 1.2, chance: 20 }, { name: '5 TON', value: 5, chance: 18 },
-      { name: 'Homemade Cake', value: 50, chance: 12 }, { name: 'Berry Box', value: 50, chance: 10 },
-      { name: 'Toy Bear', value: 15, chance: 8 },
-      { name: 'Crystal Ball', value: 666, chance: 1.5, nft: true },
-      { name: 'Genie Lamp', value: 650, chance: 1.2, nft: true },
-      { name: 'Voodoo Doll', value: 655, chance: 1, nft: true },
-      { name: 'Spy Agaric', value: 814, chance: 0.8, nft: true },
-      { name: 'Scared Cat', value: 721, chance: 0.7, nft: true },
-      { name: 'Kissed Frog', value: 721, chance: 0.6, nft: true },
-      { name: 'Jelly Bunny', value: 721, chance: 0.5, nft: true },
-      { name: 'Signet Ring', value: 700, chance: 0.35, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.25, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.07, nft: true },
-      { name: 'Plush Pepe', value: 900, chance: 0.025, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.005, nft: true }
+    royal: { id: 'royal', name: "Royal case", price: 15, desc: "Редкие NFT, шанс на Durov's Cap", prizes: [
+      P("1 TON", 9.262),
+      P("Алмаз", 9.21),
+      P("Кольцо", 9.21),
+      P("Кубок", 9.21),
+      P("2 TON", 1.92),
+      P("Jingle Bells", 1.92),
+      P("5 TON", 2.06),
+      P("Pet Snake", 1.92),
+      P("Sakura Flower", 1.92),
+      P("Light Sword", 1.92),
+      P("Instant Ramen", 2.06),
+      P("Jester Hat", 2.06),
+      P("10 TON", 1.6),
+      P("Jelly Bunny", 2.06),
+      P("Restless Jar", 1.6),
+      P("Top Hat", 2.06),
+      P("Evil Eye", 1.6),
+      P("Hex Pot", 1.6),
+      P("Spy Agaric", 2.06),
+      P("Kissed Frog", 1.6),
+      P("Scared Cat", 1.6),
+      P("Trapped Heart", 1.94),
+      P("Vice Cream", 1.94),
+      P("Astral Shard", 1.94),
+      P("Skull Flower", 1.94),
+      P("Record Player", 1.94),
+      P("Flying Broom", 1.94),
+      P("Eternal Rose", 1.83),
+      P("Love Potion", 1.83),
+      P("Vintage Cigar", 1.83),
+      P("Bow Tie", 1.83),
+      P("Magic Potion", 1.83),
+      P("Voodoo Doll", 1.83),
+      P("Crystal Ball", 1.03),
+      P("Bonded Ring", 1.03),
+      P("Electric Skull", 1.03),
+      P("Sharp Tongue", 1.03),
+      P("Genie Lamp", 1.03),
+      P("Mad Pumpkin", 1.03),
+      P("Signet Ring", 0.755),
+      P("Ion Gem", 0.755),
+      P("Perfume Bottle", 0.755),
+      P("Diamond Ring", 0.137),
+      P("Swiss Watch", 0.137),
+      P("Neko Helmet", 0.137),
+      P("Mini Oscar", 0.023),
+      P("Loot Bag", 0.023),
+      P("Precious Peach", 0.023),
+      P("Durov's Cap", 0.003)
     ] },
-    titan: { id: 'titan', name: 'Titan case', price: 75, desc: 'Премиум дроп', prizes: [
-      { name: '1 TON', value: 1, chance: 22 }, { name: '2 TON', value: 2, chance: 18 }, { name: '5 TON', value: 5, chance: 15 },
-      { name: 'Мишка', value: 2, chance: 14 }, { name: 'Сердце', value: 2.5, chance: 12 },
-      { name: 'Homemade Cake', value: 50, chance: 8 }, { name: 'Berry Box', value: 50, chance: 6 },
-      { name: 'Magic Potion', value: 600, chance: 1.2, nft: true },
-      { name: 'Crystal Ball', value: 666, chance: 1, nft: true },
-      { name: 'Flying Broom', value: 650, chance: 0.8, nft: true },
-      { name: 'Skull Flower', value: 600, chance: 0.6, nft: true },
-      { name: 'Sharp Tongue', value: 600, chance: 0.5, nft: true },
-      { name: 'Astral Shard', value: 800, chance: 0.4, nft: true },
-      { name: 'Spy Agaric', value: 814, chance: 0.3, nft: true },
-      { name: 'Signet Ring', value: 700, chance: 0.15, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.1, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.04, nft: true },
-      { name: 'Plush Pepe', value: 900, chance: 0.008, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.002, nft: true }
-    ] },
-    void: { id: 'void', name: 'Void case', price: 150, desc: 'Максимальный риск', prizes: [
-      { name: '5 TON', value: 5, chance: 30 }, { name: '2 TON', value: 2, chance: 25 }, { name: '1 TON', value: 1, chance: 20 },
-      { name: 'Мишка', value: 3, chance: 12 }, { name: 'Сердце', value: 3, chance: 8 },
-      { name: 'Eternal Rose', value: 25, chance: 2.5 },
-      { name: 'Astral Shard', value: 800, chance: 0.8, nft: true },
-      { name: 'Spy Agaric', value: 814, chance: 0.6, nft: true },
-      { name: 'Crystal Ball', value: 666, chance: 0.5, nft: true },
-      { name: 'Signet Ring', value: 700, chance: 0.3, nft: true },
-      { name: 'Perfume Bottle', value: 710, chance: 0.2, nft: true },
-      { name: 'Precious Peach', value: 900, chance: 0.07, nft: true },
-      { name: 'Plush Pepe', value: 900, chance: 0.025, nft: true },
-      { name: "Durov's Cap", value: 1000, chance: 0.005, nft: true }
+    diamond: { id: 'diamond', name: "Diamond case", price: 25, desc: "Топовые NFT, шанс на Plush Pepe", prizes: [
+      P("1 TON", 3.129),
+      P("Алмаз", 3.05),
+      P("Кольцо", 3.05),
+      P("Кубок", 3.05),
+      P("2 TON", 2.86),
+      P("Jingle Bells", 2.86),
+      P("5 TON", 2.86),
+      P("Pet Snake", 2.86),
+      P("Light Sword", 2.86),
+      P("Jester Hat", 2.86),
+      P("10 TON", 2.67),
+      P("Jelly Bunny", 2.86),
+      P("Top Hat", 2.86),
+      P("Spy Agaric", 2.86),
+      P("Kissed Frog", 2.67),
+      P("Scared Cat", 2.67),
+      P("Trapped Heart", 2.67),
+      P("Vice Cream", 2.67),
+      P("Astral Shard", 2.86),
+      P("Skull Flower", 2.86),
+      P("Record Player", 2.86),
+      P("Flying Broom", 2.86),
+      P("Eternal Rose", 2.86),
+      P("Love Potion", 2.7),
+      P("Vintage Cigar", 2.86),
+      P("Bow Tie", 2.7),
+      P("Magic Potion", 2.7),
+      P("Voodoo Doll", 2.7),
+      P("Crystal Ball", 2.7),
+      P("Bonded Ring", 2.7),
+      P("Electric Skull", 2.1),
+      P("Sharp Tongue", 2.1),
+      P("Genie Lamp", 2.1),
+      P("Mad Pumpkin", 2.1),
+      P("Signet Ring", 2.1),
+      P("Ion Gem", 1.27),
+      P("Perfume Bottle", 1.27),
+      P("Diamond Ring", 1.27),
+      P("Swiss Watch", 0.286),
+      P("Neko Helmet", 0.286),
+      P("Mini Oscar", 0.286),
+      P("Loot Bag", 0.048),
+      P("Precious Peach", 0.048),
+      P("Durov's Cap", 0.006),
+      P("Heart Locket", 0.0008),
+      P("Plush Pepe", 0.0002)
     ] }
   };
   NX.CASES = CASES;
@@ -141,7 +383,7 @@
   function art(id) { return ART.caseArt(id, window.giftImg(window.CASE_GIFT[id], '')); }
 
   /* ===== cases page ===== */
-  var filter = 'all', selCase = null, qty = 1, demo = false, fast = false, opening = false, tickT = null;
+  var filter = 'all', selCase = null, qty = 1, demo = false, fast = false, opening = false, tickT = null, cur = null;
   try { fast = localStorage.getItem('nv_fast') === '1'; } catch (e) {}
 
   function freeLeft() { var u = NX.user(); return (u.last_free || 0) + 86400000 - Date.now(); }
@@ -162,7 +404,7 @@
   }
   function renderCases() {
     var body = $('csBody'); if (!body) return;
-    var paid = ['dust', 'selected', 'half', 'cake', 'neon', 'legend', 'titan', 'void'], html = '', i = 0;
+    var paid = ['dust', 'selected', 'half', 'candy', 'cake', 'royal', 'diamond'], html = '', i = 0;
     if (filter !== 'paid') html += '<div class="sec">Free</div><div class="cgrid">' + caseCard(CASES.free, i++, true) + '</div>';
     if (filter !== 'free') html += '<div class="sec">Кейсы</div><div class="cgrid">' + paid.map(function (k) { return caseCard(CASES[k], i++, false); }).join('') + '</div>';
     body.innerHTML = html;
@@ -187,13 +429,7 @@
       $('v-cases').addEventListener('click', function (e) { var b = e.target.closest('[data-case]'); if (b) { NX.sfx('click'); openSheet(b.getAttribute('data-case')); } });
     },
     enter: function () { renderCases(); clearInterval(tickT); tickT = setInterval(tickFree, 1000); },
-    leave: function () {
-      clearInterval(tickT);
-      if (opening) {
-        opening = false;
-        try { $('spin').classList.remove('on'); $('spinSkip').classList.add('hide'); } catch (e) {}
-      }
-    }
+    leave: function () { clearInterval(tickT); }
   };
 
   /* ===== preview sheet ===== */
@@ -205,7 +441,7 @@
       '<div class="cs-top"><div class="cs-art">' + art(id) + '</div><div><div class="cs-n">' + c.name + '</div><div class="cs-d">' + c.desc + '</div><span id="csPrice"></span></div></div>' +
       '<div class="sw-row"><span>Демо-режим</span><label class="sw"><input type="checkbox" id="demoMode"><i></i></label></div>' +
       '<div class="sw-row"><span>Быстрое открытие</span><label class="sw"><input type="checkbox" id="fastOpen"' + (fast ? ' checked' : '') + '><i></i></label></div>' +
-      (id === 'free' ? '' : '<div class="lab">Сколько открыть?</div><div class="qty" id="qtyBox" style="grid-template-columns:repeat(4,1fr)">' + [1, 2, 3, 5, 10, 25, 100].map(function (n) { return '<button type="button" data-q="' + n + '"' + (n === 1 ? ' class="on"' : '') + '>' + n + '</button>'; }).join('') + '</div>') +
+      (id === 'free' ? '' : '<div class="lab">Сколько открыть?</div><div class="qty" id="qtyBox">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-q="' + n + '"' + (n === 1 ? ' class="on"' : '') + '>' + n + '</button>'; }).join('') + '</div>') +
       '<div class="lab">Содержимое кейса</div><div class="items">' + items.map(function (p) {
         return '<div class="it' + (p.nft ? ' nft' : '') + '" style="--rc:' + NX.tier(p.value, p.nft) + '">' + window.giftImg(p.name) +
           '<div class="it-n">' + NX.esc(p.name) + '</div><div class="it-v">' + NX.tonI(13) + NX.fmt(p.value) + '</div><div class="it-c">' + p.chance + '%</div></div>';
@@ -248,6 +484,8 @@
   }
   function siHtml(p) { return '<div class="si" style="--rc:' + NX.tier(p.value, p.nft) + '">' + window.giftImg(p.name) + '<span>' + NX.esc(p.name) + '</span></div>'; }
 
+  var failT = null;
+  NX.skipSpin = function () { var b = $('spinSkip'); if (b && b.onclick) b.onclick(); };
   function startOpen() {
     if (opening) return;
     var c = CASES[selCase], u = NX.user(), n = c.id === 'free' ? 1 : qty, isDemo = demo;
@@ -255,7 +493,7 @@
       if (c.id === 'free') { if (freeLeft() > 0) { NX.toast('Бесплатный кейс ещё не готов', 'error'); return; } }
       else { var cost = NX.r2(c.price * n); if (!NX.canPay(cost)) { NX.toast('Не хватает TON', 'error'); return; } }
     }
-    opening = true; NX.close('shCase');
+    opening = true; NX.close('shCase'); cur = null;
     var wins = [], i;
     for (i = 0; i < n; i++) wins.push(roll(c.prizes));
     var added = [], tonGain = 0;
@@ -268,17 +506,17 @@
       if (tonGain) u.balance = NX.r2(u.balance + tonGain);
       NX.stat('opened', n); NX.save(true);
     }
-    /* build strips — animate up to 5 rows even if opening 10/25/100 */
-    var rows = $('spinRows'), filler = fillerFor(c), N = 54, W = 46;
-    var showN = Math.min(n, 5), small = showN > 1, html = '';
-    for (i = 0; i < showN; i++) {
+    /* build strips */
+    var rows = $('spinRows'), filler = fillerFor(c), N = 54, W = 46, small = n > 1, html = '';
+    for (i = 0; i < n; i++) {
       var s = '', k;
       for (k = 0; k < N; k++) s += siHtml(k === W ? wins[i] : filler());
       html += '<div class="srow' + (small ? ' small' : '') + '"><div class="mk"></div><div class="strip">' + s + '</div></div>';
     }
+    cur = { c: c, wins: wins, added: added, isDemo: isDemo, tonGain: tonGain, t: Date.now() };
     rows.innerHTML = html;
     $('spinTitle').textContent = c.name + (n > 1 ? ' ×' + n : '') + (isDemo ? ' · демо' : '');
-    $('spinSub').textContent = n > 5 ? ('Открываем ×' + n + '…') : 'Открываем…';
+    $('spinSub').textContent = 'Открываем…';
     $('spin').classList.add('on'); NX.sfx('open'); NX.haptic('medium');
     var skipBtn = $('spinSkip'); skipBtn.classList.add('hide');
     var strips = NX.qa('.strip', rows), skip = false, t0 = performance.now() + 250, done = 0, lastIdx = {};
@@ -290,6 +528,8 @@
     });
     if (!fast) setTimeout(function () { if (opening) skipBtn.classList.remove('hide'); }, 1600);
     skipBtn.onclick = function () { skip = true; };
+    var tokRef = cur, maxDur = Math.max.apply(null, info.map(function (o) { return o.dur; })) + 2500;
+    clearTimeout(failT); failT = setTimeout(function () { if (cur === tokRef) finishOpen(c, wins, added, isDemo, tonGain, tokRef); }, maxDur);
     (function frame(now) {
       var all = true;
       info.forEach(function (o, idx) {
@@ -302,11 +542,14 @@
         if (t >= 1) { o.fin = true; o.st.children[W].classList.add('win'); NX.sfx('land'); } else all = false;
       });
       if (!all) requestAnimationFrame(frame);
-      else setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain); }, skip ? 450 : 850);
+      else setTimeout(function () { finishOpen(c, wins, added, isDemo, tonGain, tokRef); }, skip ? 450 : 850);
     })(performance.now());
   }
 
-  function finishOpen(c, wins, added, isDemo, tonGain) {
+  function finishOpen(c, wins, added, isDemo, tonGain, tok) {
+    if (!cur) { if (!opening) return; }
+    if (tok && tok !== cur) return;
+    cur = null; clearTimeout(failT);
     $('spin').classList.remove('on'); $('spinSkip').classList.add('hide');
     opening = false;
     NX.renderUser(); if (NX.cur() === 'cases') renderCases();
@@ -326,21 +569,15 @@
     var sellable = added.reduce(function (s, e) { return s + e.value; }, 0);
     if (!isDemo && added.length) html += '<button type="button" class="btn ghost" id="btnResSell">Продать за ' + NX.fmt(sellable) + ' TON</button>';
     $('modResBody').innerHTML = html;
-    function backToCase() {
-      NX.close('modRes');
-      NX.sfx('click');
-      if (selCase && CASES[selCase]) openSheet(selCase);
-    }
-    $('btnResOk').onclick = backToCase;
+    $('btnResOk').onclick = function () { NX.close('modRes'); NX.sfx('click'); };
     var sb = $('btnResSell');
     if (sb) sb.onclick = function () {
       var ids = added.map(function (e) { return e.id; }), u = NX.user();
       u.inventory = u.inventory.filter(function (it) { return ids.indexOf(it.id) < 0; });
-      NX.credit(sellable); NX.toast('Продано +' + NX.fmt(sellable) + ' TON', 'success'); NX.sfx('win');
-      backToCase();
+      NX.credit(sellable); NX.toast('Продано +' + NX.fmt(sellable) + ' TON', 'success'); NX.sfx('win'); NX.close('modRes');
     };
     NX.open('modRes');
-    if (best.value >= 50) { NX.sfx('big'); NX.haptic('success'); NX.confetti(1.6); } else if (best.value >= 1) { NX.sfx('win'); NX.haptic('success'); NX.confetti(.6); } else NX.sfx('gem');
+    if (best.value >= 20) { NX.sfx('big'); NX.haptic('success'); NX.confetti(1.6); } else if (best.value >= 1) { NX.sfx('win'); NX.haptic('success'); NX.confetti(.6); } else NX.sfx('gem');
   }
 
   /* ===== inventory (shared) ===== */
@@ -358,48 +595,17 @@
     };
   };
 
-  /* ===== вывод подарков =====
-     Правила: выводить можно только подарки от NX.WD_MIN TON (не «N TON» из кейсов) и только пока открыто окно вывода:
-     оно открывается пополнением на NX.WD_STARS ⭐ одним платежом и действует NX.WD_DAYS дней.
-     Окончательную проверку делает бот, здесь — подсказки для игрока. */
-  function wdKind(item) {
-    var g = window.GIFTS && window.GIFTS[item.name];
-    if ((g && g.local) || / TON$/.test(String(item.name))) return 'coin';
-    if (NX.r2(item.value) < NX.WD_MIN) return 'min';
-    return 'ok';
-  }
-
-  function showWdLocked() {
-    NX.close('modItem');
-    $('modInfoBody').innerHTML = '<button type="button" class="mx" data-close="modInfo" aria-label="Закрыть">✕</button><h3>Вывод закрыт</h3>' +
-      '<p class="hint" style="font-size:14px;line-height:1.55;margin:8px 0 14px">Чтобы выводить подарки, пополни баланс на <b style="color:#fff">' + NX.WD_STARS + ' ⭐</b> одним платежом. ' +
-      'После этого <b style="color:#fff">' + NX.WD_DAYS + ' дней</b> можно бесплатно выводить подарки стоимостью от ' + NX.WD_MIN + ' TON.</p>' +
-      '<button type="button" class="btn" id="btnWdTop">Пополнить ' + NX.WD_STARS + ' ⭐</button>';
-    $('btnWdTop').onclick = function () { NX.close('modInfo'); NX.openBot('pay_' + NX.WD_STARS); };
-    NX.open('modInfo');
-  }
-  NX.showWdLocked = showWdLocked;
-
   NX.showItem = function (item) {
-    var wd = item.status === 'withdrawing', body = $('modItemBody'), kind = wdKind(item), u = NX.user(), wdBtn = '';
-    if (!wd) {
-      if (kind !== 'ok') {
-        wdBtn = '<button type="button" class="btn ghost" disabled>Вывод от ' + NX.WD_MIN + ' TON</button>' +
-          '<div class="hint" style="margin-top:8px">' + (kind === 'coin' ? 'Это не подарок — его можно только продать.' : 'Выводить можно подарки стоимостью от ' + NX.WD_MIN + ' TON. Этот можно продать.') + '</div>';
-      } else {
-        wdBtn = '<button type="button" class="btn ghost" id="btnWd">Вывести подарок</button>' +
-          '<div class="hint" style="margin-top:8px">' + (NX.wdOpen() ? 'Вывод открыт до ' + NX.fmtDate(u.wd_until) : 'Чтобы вывести, пополни ' + NX.WD_STARS + ' ⭐ — вывод откроется на ' + NX.WD_DAYS + ' дней') + '</div>';
-      }
-    }
+    var wd = item.status === 'withdrawing', body = $('modItemBody');
     body.innerHTML = '<button type="button" class="mx" data-close="modItem" aria-label="Закрыть">✕</button>' +
       '<div class="res-art" style="width:130px;height:130px;filter:drop-shadow(0 0 24px ' + NX.tier(item.value, item.nft) + ')">' + window.giftImg(item.name) + '</div>' +
       '<div class="res-n">' + NX.esc(item.name) + '</div>' +
       '<div class="res-v" style="margin-bottom:6px">' + NX.fmt(item.value) + ' ' + NX.tonI(22) + '</div>' +
       '<div class="hint" style="margin-bottom:14px">' + (wd ? 'На выводе (до 7 дней)' : (item.nft ? 'NFT-подарок' : 'Подарок')) + '</div>' +
-      (wd ? '' : '<button type="button" class="btn" id="btnSell">Продать за ' + NX.fmt(item.value) + ' TON</button>' + wdBtn);
+      (wd ? '' : '<button type="button" class="btn" id="btnSell">Продать за ' + NX.fmt(item.value) + ' TON</button><button type="button" class="btn ghost" id="btnWd">Вывести подарок</button>');
     var s = $('btnSell'), w = $('btnWd');
     if (s) s.onclick = function () { sellItem(item); };
-    if (w) w.onclick = function () { if (!NX.wdOpen()) { showWdLocked(); return; } withdrawItem(item); };
+    if (w) w.onclick = function () { withdrawItem(item); };
     NX.open('modItem');
   };
   function sellItem(item) {
@@ -412,19 +618,24 @@
   function withdrawItem(item) {
     var u = NX.user();
     if (item.status === 'withdrawing') { NX.toast('Уже на выводе', 'error'); return; }
-    if (wdKind(item) !== 'ok') { NX.toast('Выводить можно подарки от ' + NX.WD_MIN + ' TON', 'error'); return; }
-    if (!NX.wdOpen()) { showWdLocked(); return; }
-    /* id только из букв и цифр: он едет в start-параметре бота (a-z, 0-9, _ и -) */
-    var wdId = Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+    var wdId = 'wd_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
     item.status = 'withdrawing'; item.wd_id = wdId; item.wd_at = Date.now();
-    var g = window.GIFTS && window.GIFTS[item.name], slug = (g && g.slug) || 'x';
-    var short = 'wd_' + u.id + '_' + slug + '_' + String(NX.r2(item.value)).replace('.', 'p') + '_' + wdId;
+    var short = 'wd_' + u.id + '_' + item.value + '_' + wdId.slice(-8);
     u.wd_requests = u.wd_requests || [];
     u.wd_requests.push({ wd_id: wdId, name: item.name, value: item.value, nft: !!item.nft, uid: u.id, username: u.username || '', first_name: u.first_name || '', status: 'pending', ts: Date.now() });
     NX.save(true); NX.close('modItem'); NX.toast('Заявка на вывод создана (до 7 дней)', 'success');
-    NX.openBot(short);
+    try { if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink('https://t.me/' + NX.BOT + '?start=' + short); } catch (e) {}
     if (NX.cur() === 'profile') NX.pages.profile.enter();
   }
 
   NX.onBalance = refreshSheet;
+  NX.openGuard = function () { if (cur && Date.now() - cur.t > 12000) { var o = cur; finishOpen(o.c, o.wins, o.added, o.isDemo, o.tonGain); } };
+})(window.NX);
+
+/* watchdog: if the animation ever stalls (page frozen / error), finish the open instead of leaving a dead overlay */
+(function (NX) {
+  setInterval(function () {
+    var ov = document.getElementById('spin');
+    if (ov && ov.classList.contains('on') && NX.openGuard) NX.openGuard();
+  }, 1500);
 })(window.NX);

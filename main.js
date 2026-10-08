@@ -12,45 +12,22 @@
     return { id: 999001, first_name: 'Test', username: 'test', photo_url: null };
   }
 
-  function b64json(s) {
-    s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
-    var bin = atob(s), bytes = new Uint8Array(bin.length), i;
-    for (i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
-  }
-
   function applyDeepLink(user) {
     var bal = null, free = false, q, sp;
-    try { q = new URLSearchParams(location.search || ''); if (q.get('sync')) bal = parseInt(q.get('sync'), 10); if (q.get('free') === '1') free = true; } catch (e) {}
+    try { q = new URLSearchParams(location.search || ''); if (q.get('sync')) bal = parseFloat(String(q.get('sync')).replace(',', '.')); if (q.get('free') === '1') free = true; } catch (e) {}
     try {
       if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
         sp = String(tg.initDataUnsafe.start_param);
-        if (sp.indexOf('sync_') === 0) bal = parseInt(sp.slice(5), 10);
+        if (sp.indexOf('sync_') === 0) bal = parseFloat(sp.slice(5).replace('_', '.'));  /* sync_12_5 = 12.5 TON */
         if (sp === 'free_ok') free = true;
       }
     } catch (e) {}
-    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0) { user.balance = bal; setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900); }
-    if (free) { user.last_free = 0; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
-    /* награда от бота (кнопка в сообщении): ?rw=<base64url json>, применяется один раз */
-    try {
-      var rwRaw = new URLSearchParams(location.search || '').get('rw');
-      if (rwRaw) {
-        var rwObj = b64json(rwRaw), rwMsg = NX.applyReward(rwObj, { silent: true });
-        if (rwMsg) setTimeout(function () { NX.toast(rwMsg, 'success'); NX.sfx('win'); }, 900);
-      }
-    } catch (e) {}
-    /* бот отклонил заявку на вывод — вернуть подарок в инвентарь */
-    try {
-      var wdFail = new URLSearchParams(location.search || '').get('wd_fail');
-      if (wdFail && user.inventory) {
-        var back = 0;
-        user.inventory.forEach(function (it) {
-          if (it.wd_id && String(it.wd_id) === wdFail) { delete it.status; delete it.wd_id; delete it.wd_at; back++; }
-        });
-        (user.wd_requests || []).forEach(function (r) { if (String(r.wd_id) === wdFail) r.status = 'rejected'; });
-        if (back) setTimeout(function () { NX.toast('Подарок возвращён в инвентарь', 'success'); }, 900);
-      }
-    } catch (e) {}
+    /* a sync link is applied ONCE; re-opening the same stale link no longer resets the balance */
+    if (typeof bal === 'number' && !isNaN(bal) && bal >= 0 && bal !== user.last_sync) {
+      bal = NX.r2(bal); user.balance = bal; user.last_sync = bal;
+      setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900);
+    }
+    if (free && !user.free_link_done) { user.last_free = 0; user.free_link_done = true; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
     try {
       var wdOk = new URLSearchParams(location.search || '').get('wd_ok');
       if (wdOk && user.inventory) {
@@ -81,22 +58,28 @@
     prog(20);
     var tu = tgUser(), loc = NX.loadLocal(tu.id);
     var user = { id: tu.id, first_name: tu.first_name || 'Игрок', username: tu.username || '', photo_url: tu.photo_url || null,
-      balance: 0, inventory: [], inventory_cs2: [], last_free: 0, total_deposited: 0, total_spent: 0, stats: {}, pend: [], mn: null, wd_requests: [], wd_until: 0, applied: [], promo_log: [], _updated: 0 };
+      balance: 0, inventory: [], inventory_cs2: [], last_free: 0, total_deposited: 0, total_spent: 0, stats: {}, pend: [], mn: null, wd_requests: [], _updated: 0 };
     if (loc) NX.unpack(loc, user);
     NX.setUser(user); trackReferral(user);
     prog(45);
-    var started = false;
-    function start(cloud) {
+    var started = false, got = { cloud: undefined, remote: undefined };
+    function newest() {
+      var best = null;
+      [got.cloud, got.remote].forEach(function (o) { if (o && (o.updated_at || 0) >= (user._updated || 0) && (!best || (o.updated_at || 0) > (best.updated_at || 0))) best = o; });
+      return best;
+    }
+    function start() {
       if (started) return; started = true;
-      if (cloud) { if ((cloud.updated_at || 0) >= (user._updated || 0)) NX.unpack(cloud, user); else NX.cloudSave(); }
+      var b = newest(); if (b) NX.unpack(b, user);
       applyDeepLink(user);
       prog(75);
-      /* views */
-      var order = ['games', 'cases', 'top', 'promo', 'profile', 'plinko', 'mines', 'crash', 'roulette', 'craft'], main = $('main');
+      var order = ['games', 'cases', 'top', 'profile', 'plinko', 'mines', 'crash', 'roulette', 'craft'], main = $('main');
       order.forEach(function (n) { var s = document.createElement('section'); s.className = 'view'; s.id = 'v-' + n; main.appendChild(s); });
-      order.forEach(function (n) { if (NX.pages[n].build) NX.pages[n].build(); });
+      order.forEach(function (n) { try { if (NX.pages[n].build) NX.pages[n].build(); } catch (e) { console.error(e); } });
       NX.renderAvatar(); NX.renderUser(true); NX.bindModals();
-      NX.settleDue(); NX.save(true); if (NX.net) NX.net.start();
+      NX.ready = true;
+      NX.settleDue(); NX.save(true);
+      if (NX.net) { NX.net.start(); NX.net.retryLoad(function (o) { NX.unpack(o, user); NX.save(); NX.renderUser(true); NX.go(NX.cur() || 'games', { force: true }); }); }
       $('nav').onclick = function (e) { var b = e.target.closest('.nb'); if (!b) return; NX.sfx('tab'); NX.haptic('light'); var t = b.getAttribute('data-t'); NX.go(t, { force: NX.cur() !== t }); };
       $('btnAvatar').onclick = function () { NX.sfx('click'); NX.go('profile'); };
       document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { NX.sfx('click'); NX.back(); } });
@@ -104,12 +87,25 @@
       NX.go('games', { force: true });
       prog(100);
       setInterval(NX.settleDue, 1000);
-      setInterval(NX.cloudSave, 15000);
-      document.addEventListener('visibilitychange', function () { if (document.hidden) NX.save(true); else NX.settleDue(); });
+      setInterval(function () { NX.cloudSave(); if (NX.net) NX.net.saveState(false); }, 15000);
+      function flush() { NX.save(true); }
+      document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else NX.settleDue(); });
+      window.addEventListener('pagehide', flush);
+      try { if (tg && tg.onEvent) tg.onEvent('viewportChanged', function (e) { if (e && e.isStateStable === false) return; }); } catch (e) {}
       setTimeout(function () { $('app').classList.remove('hide'); $('loader').classList.add('out'); setTimeout(function () { $('loader').classList.add('hide'); }, 600); NX.go('games', { force: true }); }, 250);
     }
-    NX.cloudLoad(start);
-    setTimeout(function () { start(null); }, 3800);
+    var waiting = 2;
+    function step() { if (--waiting <= 0) start(); }
+    NX.cloudLoad(function (c) { got.cloud = c; step(); });
+    if (NX.net && NX.net.enabled()) NX.net.loadState(function (o) { got.remote = o; step(); }); else step();
+    setTimeout(start, 5200);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})(window.NX);
+
+/* global safety net: never leave the user stuck behind a dead overlay */
+(function (NX) {
+  window.addEventListener('error', function () { try { if (NX.openGuard) NX.openGuard(); } catch (e) {} });
+  window.addEventListener('unhandledrejection', function (e) { try { e.preventDefault(); } catch (x) {} });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && NX.openGuard) setTimeout(NX.openGuard, 300); });
 })(window.NX);

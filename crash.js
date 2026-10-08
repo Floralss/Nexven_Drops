@@ -178,7 +178,7 @@
       ctx = NX.fitCanvas($('crCanvas'), W, H); initStars(); parts = []; shock = null; lastKey = ''; lastHist = ''; lastRound = -1; $('crInfo').setAttribute('data-k', '');
       on = true; cancelAnimationFrame(raf); lastT = performance.now(); raf = requestAnimationFrame(frame);
     },
-    leave: function () { on = false; try { cancelAnimationFrame(raf); } catch (e) {} raf = 0; }
+    leave: function () { on = false; cancelAnimationFrame(raf); }
   };
   NX.crash = { crashOf: crashOf, PERIOD: PERIOD, BET: BET, flyDur: flyDur, phaseAt: phaseAt, multAt: multAt };
 })(window.NX);
