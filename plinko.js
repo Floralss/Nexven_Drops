@@ -1,12 +1,12 @@
-/* Nexven Drop — Plinko (8 rows, 9 bins, binomial path, ~92-94% RTP) */
+/* Nexven Drop — Plinko (8 rows, 9 bins, binomial path, v28: ~83-85% RTP) */
 (function (NX) {
   'use strict';
   var $ = NX.$;
   var ROWS = 8, DX = 34, CX = 180, CW = 360, CH = 312, PEG_Y0 = 42, PEG_DY = 28, BIN_Y = 266, BIN_H = 30, BIN_W = 30, PEG_R = 3.6, BALL_R = 6.6;
   var RISK = {
-    low:  { label: 'Низкий',  cls: 'low',  m: [5, 2, 1.1, 0.9, 0.5, 0.9, 1.1, 2, 5] },
-    mid:  { label: 'Средний', cls: 'mid',  m: [13, 3, 1.2, 0.6, 0.4, 0.6, 1.2, 3, 13] },
-    high: { label: 'Высокий', cls: 'high', m: [26, 4, 1.4, 0.3, 0.2, 0.3, 1.4, 4, 26] }
+    low:  { label: 'Низкий',  cls: 'low',  m: [4.8, 1.9, 1, 0.8, 0.45, 0.8, 1, 1.9, 4.8] },
+    mid:  { label: 'Средний', cls: 'mid',  m: [12, 3, 1.1, 0.5, 0.35, 0.5, 1.1, 3, 12] },
+    high: { label: 'Высокий', cls: 'high', m: [24, 3.6, 1.3, 0.25, 0.15, 0.25, 1.3, 3.6, 24] }
   };
   var BIN_COL = ['#d9264a', '#e0432e', '#e2692a', '#e8962a', '#f0b429', '#e8962a', '#e2692a', '#e0432e', '#d9264a'];
   var risk = 'mid', bet = null, cv = null, ctx = null, raf = 0, on = false;

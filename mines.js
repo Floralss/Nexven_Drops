@@ -1,7 +1,7 @@
-/* Nexven Drop — Mines (5x5, real bet / cash-out, state survives reload) */
+/* Nexven Drop — Mines (5x5, real bet / cash-out, state survives reload). v28: house edge 15% (EDGE 0.85); mines are decided at the moment of the click with the exact fair probability (mines left / cells left), so the layout is never stored and can't be read from the saved state. */
 (function (NX) {
   'use strict';
-  var $ = NX.$, EDGE = 0.96, SIZE = 25;
+  var $ = NX.$, EDGE = 0.85, SIZE = 25;
   var cfgMines = 3, bet = null, over = null; /* over = {pos, rev, hit} after a finished round */
 
   var GEM = '<svg viewBox="0 0 48 48"><defs><linearGradient id="gm1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9dffe0"/><stop offset="1" stop-color="#14c98a"/></linearGradient></defs><path d="M24 5l15 10-15 28L9 15z" fill="url(#gm1)"/><path d="M24 5l15 10H9z" fill="#fff" fill-opacity=".45"/><path d="M24 15l-6 0 6 28zM24 15h6l-6 28z" fill="#0a7a55" fill-opacity=".35"/></svg>';
@@ -15,6 +15,14 @@
   function mtxt(v) { return v >= 100 ? Math.round(v).toString() : v.toFixed(2); }
   function shuffled(n) { var a = [], i; for (i = 0; i < n; i++) a.push(i); for (i = n - 1; i > 0; i--) { var j = NX.randInt(i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
+  /* mine layout for the end-of-round reveal: the hit cell (if any) + the rest of the mines spread over the still-closed cells */
+  function genPos(g, hit) {
+    var rest = [], i, need = g.mines - (hit >= 0 ? 1 : 0), out = hit >= 0 ? [hit] : [];
+    for (i = 0; i < SIZE; i++) if (g.rev.indexOf(i) < 0 && i !== hit) rest.push(i);
+    for (i = rest.length - 1; i > 0; i--) { var j = NX.randInt(i + 1), t = rest[i]; rest[i] = rest[j]; rest[j] = t; }
+    return out.concat(rest.slice(0, need));
+  }
+
   function tilesHtml() {
     var h = '', i;
     for (i = 0; i < SIZE; i++) h += '<button type="button" class="tile" data-i="' + i + '"><span class="f front"></span><span class="f back"></span></button>';
@@ -23,7 +31,7 @@
 
   function render(animate) {
     var u = NX.user(), g = u.mn, tiles = NX.qa('#mnGrid .tile'), shownM = g ? g.mines : cfgMines;
-    var pos = g ? g.pos : (over ? over.pos : []), rev = g ? g.rev : (over ? over.rev : []);
+    var pos = g ? (g.pos || []) : (over ? over.pos : []), rev = g ? g.rev : (over ? over.rev : []);
     tiles.forEach(function (t, i) {
       var isMine = pos.indexOf(i) >= 0, isRev = rev.indexOf(i) >= 0, finished = !g && over;
       var show = isRev || (finished && (isMine || true));
@@ -63,15 +71,16 @@
     var u = NX.user(); if (u.mn) return;
     var a = NX.parseBet(bet); if (!a) return;
     NX.spend(a); NX.stat('mines');
-    u.mn = { bet: a, mines: cfgMines, pos: shuffled(SIZE).slice(0, cfgMines), rev: [], ts: Date.now() };
+    u.mn = { bet: a, mines: cfgMines, rev: [], ts: Date.now() };
     over = null; NX.save(true); setMsg('');
     NX.sfx('click'); NX.haptic('medium'); render();
   }
 
   function pick(i) {
     var u = NX.user(), g = u.mn; if (!g || g.rev.indexOf(i) >= 0) return;
-    if (g.pos.indexOf(i) >= 0) { /* boom */
-      over = { pos: g.pos.slice(), rev: g.rev.slice(), hit: i }; u.mn = null; NX.save(true);
+    var boom = Array.isArray(g.pos) && g.pos.length ? g.pos.indexOf(i) >= 0 : NX.rand() < g.mines / (SIZE - g.rev.length);  /* old saved rounds keep their layout */
+    if (boom) {
+      over = { pos: (Array.isArray(g.pos) && g.pos.length) ? g.pos.slice() : genPos(g, i), rev: g.rev.slice(), hit: i }; u.mn = null; NX.save(true);
       render(); NX.sfx('boom'); NX.haptic('error');
       var gr = $('mnGrid'); gr.classList.remove('shake'); void gr.offsetWidth; gr.classList.add('shake');
       setMsg('Мина! −' + NX.fmt(g.bet) + ' TON', 'neg'); return;
@@ -84,7 +93,7 @@
   function cash(auto) {
     var u = NX.user(), g = u.mn; if (!g || !g.rev.length) return;
     var m = mult(g.rev.length, g.mines), pay = NX.r2(g.bet * m);
-    over = { pos: g.pos.slice(), rev: g.rev.slice(), hit: -1 }; u.mn = null;
+    over = { pos: (Array.isArray(g.pos) && g.pos.length) ? g.pos.slice() : genPos(g, -1), rev: g.rev.slice(), hit: -1 }; u.mn = null;
     NX.credit(pay); NX.save(true); render();
     setMsg('+' + NX.fmt(pay) + ' TON · x' + mtxt(m), 'pos');
     NX.sfx(m >= 3 ? 'big' : 'win'); NX.haptic('success');

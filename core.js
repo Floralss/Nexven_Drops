@@ -42,7 +42,8 @@
   (function () {
     var c = window.NEXVEN_CFG || {};
     NX.DEP_MIN_STARS = Number(c.depositMinStars) || 10;
-    NX.WD_MIN_TON = Number(c.wdMinTon) || 1;
+    NX.WD_MIN_TON = Number(c.wdMinTon) || 3;
+    NX.MIN_BET = Number(c.minBet) || 0.5;
     NX.WD_ACCESS_STARS = Number(c.wdAccessStars) || 100;
     NX.WD_ACCESS_DAYS = Number(c.wdAccessDays) || 7;
   })();
@@ -322,7 +323,11 @@
 
   /* ---------- modals / sheets ---------- */
   NX.open = function (id) { var el = $(id); if (el) { el.classList.add('on'); NX.haptic('light'); } };
-  NX.close = function (id) { var el = $(id); if (el) el.classList.remove('on'); };
+  NX.close = function (id) {
+    var el = $(id); if (el) el.classList.remove('on');
+    /* v28: after the case result is closed, go back into the case screen (not to the list of cases) */
+    if (id === 'modRes' && NX.afterRes) { var f = NX.afterRes; NX.afterRes = null; setTimeout(f, 80); }
+  };
   doc.addEventListener('click', function (e) {
     var c = e.target.closest && e.target.closest('[data-close]');
     if (c) { NX.close(c.getAttribute('data-close')); }
@@ -366,7 +371,7 @@
   /* ---------- bet control component ---------- */
   NX.betHtml = function (p) {
     return '<div class="bet"><button type="button" data-b="dec" aria-label="Меньше">−</button>' +
-      '<div class="bet-in"><input id="' + p + 'Amt" inputmode="decimal" autocomplete="off" placeholder="Введите сумму" />' + NX.tonI(22) + '</div>' +
+      '<div class="bet-in"><input id="' + p + 'Amt" inputmode="decimal" autocomplete="off" placeholder="Мин. ' + NX.MIN_BET + '" />' + NX.tonI(22) + '</div>' +
       '<button type="button" data-b="inc" aria-label="Больше">+</button></div>' +
       '<div class="bet-q"><button type="button" data-b="half">1/2</button><button type="button" data-b="max">ALL IN</button><button type="button" data-b="dbl">x2</button></div>';
   };
@@ -378,10 +383,10 @@
     root.addEventListener('click', function (e) {
       var b = e.target.closest('[data-b]'); if (!b || inp.disabled) return;
       var k = b.getAttribute('data-b'), v = val();
-      if (k === 'inc') set(v + stepOf(v));
-      else if (k === 'dec') set(Math.max(0.01, v - stepOf(v - 0.0001)));
-      else if (k === 'half') set(v / 2 || 0.01);
-      else if (k === 'dbl') set((v || 0.01) * 2);
+      if (k === 'inc') set(Math.max(NX.MIN_BET, v + stepOf(v)));
+      else if (k === 'dec') set(Math.max(NX.MIN_BET, v - stepOf(v - 0.0001)));
+      else if (k === 'half') set(Math.max(NX.MIN_BET, v / 2));
+      else if (k === 'dbl') set(Math.max(NX.MIN_BET, (v || NX.MIN_BET) * 2));
       else if (k === 'max') set(Math.floor(user.balance * 100) / 100);
       NX.sfx('click'); NX.haptic('select');
     });
@@ -390,7 +395,7 @@
   };
   NX.parseBet = function (b) {
     var v = NX.r2(b.get());
-    if (v < 0.01) { NX.toast('Введите сумму ставки', 'error'); NX.haptic('error'); return 0; }
+    if (v < NX.MIN_BET - 1e-9) { NX.toast('Минимальная ставка ' + NX.MIN_BET + ' TON', 'error'); NX.haptic('error'); return 0; }
     if (!NX.canPay(v)) { NX.toast('Не хватает TON', 'error'); NX.haptic('error'); return 0; }
     return v;
   };

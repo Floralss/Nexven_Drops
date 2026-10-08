@@ -11,9 +11,11 @@ window.NEXVEN_CFG = {
   starsPerTon: 1 / 0.0091,
   /* v26: minimum Stars top-up (was 100) */
   depositMinStars: 10,
-  /* v26: gift withdrawal rules. Only gifts worth >= wdMinTon can be withdrawn, and only while the player has withdrawal access.
+  /* v26/v28: gift withdrawal rules. Only gifts worth >= wdMinTon (3 TON) can be withdrawn, and only while the player has withdrawal access.
      Access = one Stars top-up of >= wdAccessStars in the bot, which unlocks free withdrawal for wdAccessDays days. */
-  wdMinTon: 1,
+  wdMinTon: 3,
   wdAccessStars: 100,
-  wdAccessDays: 7
+  wdAccessDays: 7,
+  /* v28: minimum bet in the mini games (Plinko, Crash, Roulette, Mines) */
+  minBet: 0.5
 };

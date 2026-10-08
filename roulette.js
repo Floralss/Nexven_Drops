@@ -1,10 +1,10 @@
-/* Nexven Drop — Roulette (15 slots: 1 green x14, 7 red x2, 7 black x2; shared rounds) */
+/* Nexven Drop — Roulette (15 slots: 1 green x13, 7 red x1.9, 7 black x1.9; shared rounds) */
 (function (NX) {
   'use strict';
   var $ = NX.$;
   var BET = 10000, SPIN = 6500, SHOW = 3500, PERIOD = BET + SPIN + SHOW, SL = 15, DEG = 360 / SL;
   var choice = 'red', bet = null, on = false, raf = 0, lastRound = -1, lastKey = '', lastHist = '', lastTick = -1, msgT = 0;
-  var NAMES = { red: 'КРАСНОЕ', black: 'ЧЁРНОЕ', green: 'ЗЕЛЁНОЕ' }, MULT = { red: 2, black: 2, green: 14 };
+  var NAMES = { red: 'КРАСНОЕ', black: 'ЧЁРНОЕ', green: 'ЗЕЛЁНОЕ' }, MULT = { red: 1.9, black: 1.9, green: 13 };  /* v28: ~87-89% RTP (was x2 / x14 = 93%) */
 
   function slotOf(r) { return Math.min(SL - 1, Math.floor(NX.seeded(r, 1) * SL)); }
   function colorOf(s) { return s === 0 ? 'green' : (s % 2 ? 'red' : 'black'); }
@@ -70,9 +70,9 @@
 
   NX.pages.roulette = {
     build: function () {
-      $('v-roulette').innerHTML = NX.pageHead('РУЛЕТКА', 'Красное, чёрное или зелёное x14') +
+      $('v-roulette').innerHTML = NX.pageHead('РУЛЕТКА', 'Красное, чёрное или зелёное x13') +
         '<div class="ro-card"><div class="ro-wheel"><div class="ro-pin"></div>' + wheelSvg() + '<div class="ro-timer"><b id="roT">0</b><small id="roL"></small></div></div><div class="ro-res" id="roRes"></div><div class="ro-hist" id="roHist"></div></div>' +
-        '<div class="ctrl"><div class="ro-opts" id="roOpts"><button type="button" class="ro-opt red on" data-c="red">Красное<small>x2</small></button><button type="button" class="ro-opt green" data-c="green">Зелёное<small>x14</small></button><button type="button" class="ro-opt black" data-c="black">Чёрное<small>x2</small></button></div>' +
+        '<div class="ctrl"><div class="ro-opts" id="roOpts"><button type="button" class="ro-opt red on" data-c="red">Красное<small>x1.9</small></button><button type="button" class="ro-opt green" data-c="green">Зелёное<small>x13</small></button><button type="button" class="ro-opt black" data-c="black">Чёрное<small>x1.9</small></button></div>' +
         '<div id="roBet">' + NX.betHtml('ro') + '</div><button type="button" class="btn" id="roGo" style="margin-top:14px">Поставить</button><div class="my-state" id="roMsg"></div></div>';
       bet = NX.betBind($('roBet'), 'ro'); bet.set(1);
       $('roOpts').onclick = function (e) {

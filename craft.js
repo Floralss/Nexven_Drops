@@ -4,7 +4,7 @@
   var $ = NX.$, MULTS = [1.5, 2, 3, 5], C = 2 * Math.PI * 104;
   var selId = null, mult = 2, target = null, busy = false, angle = 0;
 
-  function chanceOf(m) { return Math.max(5, Math.floor(100 / m * 0.92)); }
+  function chanceOf(m) { return Math.max(5, Math.floor(100 / m * 0.82)); }
   function items() { return (NX.user().inventory || []).filter(function (it) { return it.status !== 'withdrawing'; }); }
   function selItem() { var l = items(); for (var i = 0; i < l.length; i++) if (l[i].id === selId) return l[i]; return null; }
 

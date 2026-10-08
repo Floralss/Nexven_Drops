@@ -7,7 +7,7 @@
   var stars = [], parts = [], lastKey = '', lastHist = '', autoOn = true, autoVal = 2, shock = null, lastRound = -1, rocketEl = null, msgT = 0;
 
   function crashOf(round) {
-    var r = NX.seeded(round, 2), v = 0.96 / (1 - r);
+    var r = NX.seeded(round, 2), v = 0.88 / (1 - r);  /* v28: 12% house edge (was 4%) */
     return Math.max(1, Math.min(MAXC, Math.floor(v * 100) / 100));
   }
   function flyDur(c) { return c <= 1 ? 0 : Math.ceil(Math.log(c) / K * 1000); }
