@@ -204,6 +204,41 @@
       net.applyRewards([JSON.parse(new TextDecoder('utf-8').decode(bytes))]);
     } catch (e) {}
   };
+
+  /* ---------- BANS (Firestore: {prefix}bans/{uid} = {banned, reason, by, ts}) ---------- */
+  net.getBan = function (id) {
+    return http(base() + '/' + C('bans') + '/' + encodeURIComponent(String(id)) + '?' + key())
+      .then(function (r) { return r.json(); })
+      .then(function (j) { var f = (j && j.fields) || {}; return (f.banned && f.banned.booleanValue) ? { banned: true, reason: str(f.reason) } : null; })
+      .catch(function (e) { if (e && e.status === 404) return null; throw e; });
+  };
+  net.setBan = function (id, banned, reason) {
+    var f = { banned: boolF(banned), reason: { stringValue: String(reason || '') }, by: { stringValue: String((NX.user() || {}).id || '') }, ts: { integerValue: String(Date.now()) } };
+    var mask = Object.keys(f).map(function (k) { return 'updateMask.fieldPaths=' + k; }).join('&');
+    return http(base() + '/' + C('bans') + '/' + encodeURIComponent(String(id)) + '?' + mask + '&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: f }) }).then(function (r) { return r.json(); });
+  };
+  net.listBans = function () {
+    return http(base() + '/' + C('bans') + '?pageSize=300&' + key()).then(function (r) { return r.json(); }).then(function (j) {
+      return (j.documents || []).map(function (d) { var f = d.fields || {}; return { id: d.name.split('/').pop(), banned: !!(f.banned && f.banned.booleanValue), reason: str(f.reason), ts: num(f.ts) }; }).filter(function (b) { return b.banned; });
+    });
+  };
+  function showBanScreen(reason) {
+    if (document.getElementById('banScreen')) return;
+    var d = document.createElement('div'); d.id = 'banScreen';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#07110d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;font-family:system-ui,sans-serif';
+    d.innerHTML = '<div style="font-size:54px;margin-bottom:12px">⛔</div><div style="font-size:22px;font-weight:800;margin-bottom:10px">Доступ закрыт</div>' +
+      '<div style="opacity:.8;max-width:320px;line-height:1.4">Ваш аккаунт заблокирован администрацией.' + (reason ? '<br><br>Причина: ' + NX.esc(reason) : '') + '</div>' +
+      '<a href="https://t.me/nexvendropmananger" style="margin-top:22px;padding:12px 26px;border-radius:14px;background:#2de6a0;color:#04130c;font-weight:800;text-decoration:none">Поддержка</a>';
+    document.body.appendChild(d);
+    try { NX.tg && NX.tg.disableVerticalSwipes && NX.tg.disableVerticalSwipes(); } catch (e) {}
+  }
+  var banT = 0;
+  net.checkBan = function () {
+    var u = NX.user(); if (!net.enabled() || !u) return;
+    if (NX.isStaff && NX.isStaff()) return;      /* staff can't be locked out */
+    var now = Date.now(); if (now - banT < 8000) return; banT = now;
+    net.getBan(u.id).then(function (b) { if (b && b.banned) showBanScreen(b.reason); else { var el = document.getElementById('banScreen'); if (el) el.remove(); } }, function () {});
+  };
   var polling2 = false;
   function refHint(t) { try { var el = document.getElementById('refSync'); if (el) el.textContent = t || ''; } catch (e) {} }
   net.pollRewards = function () {
@@ -344,8 +379,8 @@
 
   net.start = function () {
     if (!net.enabled()) return;
-    net.push(true); net.pollGrants(); net.pollRewards();
-    setInterval(function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); } }, HEART_MS);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); } });
+    net.push(true); net.pollGrants(); net.pollRewards(); net.checkBan();
+    setInterval(function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); net.checkBan(); } }, HEART_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { net.push(true); net.pollGrants(); net.pollRewards(); net.checkBan(); } });
   };
 })(window.NX);

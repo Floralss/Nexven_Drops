@@ -86,6 +86,7 @@
       NX.ready = true;
       NX.settleDue(); NX.save(true);
       try { if (NX.net && NX.net.rewardFromUrl) NX.net.rewardFromUrl(); } catch (e) {}
+      try { if (NX.net && NX.net.checkBan) NX.net.checkBan(); } catch (e) {}
       if (NX.net) { NX.net.start(); NX.net.retryLoad(function (o) { NX.unpack(o, user); NX.save(); NX.renderUser(true); NX.go(NX.cur() || 'games', { force: true }); }); }
       $('nav').onclick = function (e) { var b = e.target.closest('.nb'); if (!b) return; NX.sfx('tab'); NX.haptic('light'); var t = b.getAttribute('data-t'); NX.go(t, { force: NX.cur() !== t }); };
       $('btnAvatar').onclick = function () { NX.sfx('click'); NX.go('profile'); };

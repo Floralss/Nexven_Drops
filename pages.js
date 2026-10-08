@@ -112,7 +112,7 @@
       var ba = $('btnOpenAdmin');
       if (ba) ba.onclick = function () {
         $('admRole').textContent = NX.isOwner() ? 'Владелец: можно выдавать, забирать и обнулять TON' : 'Админ: можно принять заказ, выдавать TON нельзя';
-        NX.open('modAdmin'); NX.loadAdminPlayers(); NX.loadPromos();
+        NX.open('modAdmin'); NX.loadAdminPlayers(); NX.loadPromos(); NX.loadBans();
       };
     }
   };
@@ -263,6 +263,22 @@
       }
       if (act === 'tg') { NX.net.promoToggle(code, b.getAttribute('data-on') === '1').then(function () { NX.loadPromos(); }, function (er) { pmMsg(false, (er && er.message) || 'Ошибка'); }); }
     };
+    /* bans */
+    function banMsg(ok, t) { var r = $('banRes'); if (r) { r.className = 'hint ' + (ok ? 'ok' : 'err'); r.textContent = t; } }
+    function protectedId(id) { return NX.sameId(id, NX.OWNER_ID) || NX.ADMIN_IDS.some(function (a) { return NX.sameId(id, a); }); }
+    function setBan(on) {
+      var id = String($('banId').value || '').trim();
+      if (!/^\d{5,15}$/.test(id)) { banMsg(false, 'Введите числовой Telegram ID'); return; }
+      if (on && protectedId(id)) { banMsg(false, 'Владельца и админов банить нельзя'); return; }
+      if (!NX.net.enabled()) { banMsg(false, 'Нужен Firebase (config.js)'); return; }
+      NX.net.setBan(id, on, on ? $('banReason').value : '').then(function () {
+        banMsg(true, (on ? 'Забанен: ' : 'Разбанен: ') + id + (on ? ' (в боте блокировка включится в течение минуты)' : ''));
+        NX.toast(on ? 'Игрок заблокирован' : 'Блокировка снята', 'success'); NX.haptic('success'); NX.loadBans();
+      }, function (er) { banMsg(false, (er && er.message) || 'Ошибка'); });
+    }
+    $('btnBan').onclick = function () { setBan(true); };
+    $('btnUnban').onclick = function () { setBan(false); };
+    $('banList').onclick = function (e) { var r = e.target.closest('[data-bid]'); if (r) { $('banId').value = r.getAttribute('data-bid'); NX.haptic('select'); } };
     /* player picker (needs shared leaderboard) */
     $('admPick').onclick = function (e) { var r = e.target.closest('[data-pid]'); if (r) { $('admId').value = r.getAttribute('data-pid'); NX.haptic('select'); } };
   }
@@ -275,6 +291,14 @@
         return '<button type="button" class="prow" data-pid="' + NX.esc(r.id) + '"><span>' + (r.online ? '<i class="dot"></i>' : '<i class="dot off"></i>') + NX.esc(r.name) + '</span><small>' + NX.esc(r.id) + '</small></button>';
       }).join('');
     }).catch(function (e) { box.innerHTML = '<div class="hint">' + NX.esc((e && e.message) || 'Не удалось загрузить игроков') + '</div>'; });
+  };
+  NX.loadBans = function () {
+    var box = $('banList'); if (!box || !NX.net.enabled()) return;
+    NX.net.listBans().then(function (list) {
+      box.innerHTML = list.length ? '<div class="lab" style="margin:10px 0 6px">В бане (' + list.length + ') — нажми, чтобы подставить ID</div>' + list.map(function (b) {
+        return '<button type="button" class="prow" data-bid="' + NX.esc(b.id) + '"><span>' + NX.esc(b.reason || 'без причины') + '</span><small>' + NX.esc(b.id) + '</small></button>';
+      }).join('') : '<div class="hint">Банов нет</div>';
+    }, function () { box.innerHTML = ''; });
   };
   NX.loadPromos = function () {
     var box = $('pmList'); if (!box) return;
