@@ -1,7 +1,7 @@
 НАСТРОЙКА FIREBASE (проект custom-graphics-36c50) — 2 минуты, один раз:
 
 1) console.firebase.google.com -> проект custom-graphics-36c50 -> Build -> Firestore Database.
-   Если написано "Create database" — нажми, режим Production или Test (любой), регион любой, база "(default)".
+   Если написано "Create database" — нажми, режим Production или Test (любой), регион любой, база "(default)" (у тебя база называется premium — это прописано в config.js, поле database).
 2) Вкладка Rules -> вставь это -> Publish:
 
 rules_version = '2';

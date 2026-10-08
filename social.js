@@ -4,7 +4,7 @@
   var cfg = window.NEXVEN_CFG || {}, ONLINE_MS = 70000, HEART_MS = 20000;
   var net = NX.net = {};
   net.enabled = function () { return !!(cfg.projectId && cfg.apiKey); };
-  function base() { return 'https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(cfg.projectId) + '/databases/(default)/documents'; }
+  function base() { return 'https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(cfg.projectId) + '/databases/' + encodeURIComponent(cfg.database || '(default)') + '/documents'; }
   function key() { return 'key=' + encodeURIComponent(cfg.apiKey); }
   function num(f) { return f ? Number(f.doubleValue != null ? f.doubleValue : f.integerValue || 0) : 0; }
   function str(f) { return f && f.stringValue != null ? f.stringValue : ''; }
