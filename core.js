@@ -36,6 +36,20 @@
     return (Math.round(y * 100) / 100).toLocaleString('ru-RU') + u[i];
   };
   NX.STARS_PER_TON = Number((window.NEXVEN_CFG || {}).starsPerTon) || 100;
+  (function () {
+    var c = window.NEXVEN_CFG || {};
+    NX.DEP_MIN_STARS = Number(c.depositMinStars) || 10;
+    NX.WD_MIN_TON = Number(c.wdMinTon) || 1;
+    NX.WD_ACCESS_STARS = Number(c.wdAccessStars) || 100;
+    NX.WD_ACCESS_DAYS = Number(c.wdAccessDays) || 7;
+  })();
+  /* withdrawal access: user.wd_until = ms timestamp until which gift withdrawal is unlocked (granted by the bot after a >= 100 Stars top-up) */
+  NX.wdAccessLeft = function () { var u = NX.user(); return u && u.wd_until ? Math.max(0, u.wd_until - Date.now()) : 0; };
+  NX.wdAccessOn = function () { return NX.wdAccessLeft() > 0; };
+  NX.wdAccessText = function () {
+    var ms = NX.wdAccessLeft(), d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+    return d > 0 ? d + ' дн. ' + h + ' ч.' : h > 0 ? h + ' ч. ' + m + ' мин.' : Math.max(1, m) + ' мин.';
+  };
   NX.tonI = function (s) { return w.ART.ton(s || 16); };
   NX.sameId = function (a, b) { return Number(a) === Number(b); };
   NX.rand = function () {
@@ -139,7 +153,7 @@
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
       stats: slimStats(user.stats), pend: user.pend || [], mn: user.mn || null, wd_requests: (user.wd_requests || []).slice(-15),
-      grants_done: (user.grants_done || []).slice(-60), last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
+      grants_done: (user.grants_done || []).slice(-60), wd_until: user.wd_until || 0, last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
@@ -157,6 +171,7 @@
       if (d.mn !== undefined) into.mn = d.mn;
       if (Array.isArray(d.wd_requests)) into.wd_requests = d.wd_requests;
       if (Array.isArray(d.grants_done)) into.grants_done = d.grants_done;
+      if (typeof d.wd_until === 'number') into.wd_until = Math.max(into.wd_until || 0, d.wd_until);
       if (d.last_sync !== undefined) into.last_sync = d.last_sync;
       into._updated = d.updated_at || 0;
     } catch (e) {}

@@ -603,12 +603,30 @@
       '<div class="res-n">' + NX.esc(item.name) + '</div>' +
       '<div class="res-v" style="margin-bottom:6px">' + NX.fmt(item.value) + ' ' + NX.tonI(22) + '</div>' +
       '<div class="hint" style="margin-bottom:14px">' + (wd ? 'На выводе (до 7 дней)' : (item.nft ? 'NFT-подарок' : 'Подарок')) + '</div>' +
-      (wd ? '' : '<button type="button" class="btn" id="btnSell">Продать за ' + NX.fmt(item.value) + ' TON</button><button type="button" class="btn ghost" id="btnWd">Вывести подарок</button>');
+      (wd ? '' : '<button type="button" class="btn" id="btnSell">Продать за ' + NX.fmt(item.value) + ' TON</button><button type="button" class="btn ghost" id="btnWd">Вывести подарок</button>' + wdNote(item));
     var s = $('btnSell'), w = $('btnWd');
     if (s) s.onclick = function () { sellItem(item); };
     if (w) w.onclick = function () { withdrawItem(item); };
     NX.open('modItem');
   };
+  /* v26: withdrawal is only for gifts worth >= WD_MIN_TON and only while the player has withdrawal access (>= 100 Stars top-up = 7 days) */
+  /* gift name -> base64url (start param may only contain A-Za-z0-9_-, max 64 chars), cut to fit */
+  function b64name(name) {
+    try {
+      var bytes = unescape(encodeURIComponent(String(name || ''))), out = '';
+      while (bytes.length > 30) bytes = bytes.slice(0, -1);
+      out = btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      return out;
+    } catch (e) { return ''; }
+  }
+  function canWd(item) { return item.value + 1e-9 >= NX.WD_MIN_TON; }
+  function wdNote(item) {
+    var t;
+    if (!canWd(item)) t = 'Вывод доступен только для подарков от ' + NX.WD_MIN_TON + ' TON';
+    else if (NX.wdAccessOn()) t = 'Бесплатный вывод активен ещё ' + NX.wdAccessText();
+    else t = 'Для вывода пополни от ' + NX.WD_ACCESS_STARS + ' Stars — откроется бесплатный вывод на ' + NX.WD_ACCESS_DAYS + ' дн.';
+    return '<div class="hint" style="margin-top:10px">' + t + '</div>';
+  }
   function sellItem(item) {
     var u = NX.user(), i = u.inventory.indexOf(item); if (i < 0) return;
     u.inventory.splice(i, 1); NX.credit(item.value); NX.close('modItem');
@@ -619,9 +637,14 @@
   function withdrawItem(item) {
     var u = NX.user();
     if (item.status === 'withdrawing') { NX.toast('Уже на выводе', 'error'); return; }
-    var wdId = 'wd_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+    if (!canWd(item)) { NX.toast('Вывод только для подарков от ' + NX.WD_MIN_TON + ' TON', 'error'); return; }
+    if (!NX.wdAccessOn()) {
+      NX.close('modItem'); NX.toast('Нужен доступ к выводу: пополни от ' + NX.WD_ACCESS_STARS + ' Stars', 'error');
+      setTimeout(function () { NX.openDeposit(NX.WD_ACCESS_STARS); }, 350); return;
+    }
+    var wdId = 'wd' + Date.now().toString(36) + Math.floor(Math.random() * 1679616).toString(36);  /* letters+digits only, so the last 8 chars are safe inside a start link */
     item.status = 'withdrawing'; item.wd_id = wdId; item.wd_at = Date.now();
-    var short = 'wd_' + u.id + '_' + item.value + '_' + wdId.slice(-8);
+    var short = 'wd_' + Math.round(item.value * 100) + '_' + wdId.slice(-8) + '_' + b64name(item.name);
     u.wd_requests = u.wd_requests || [];
     u.wd_requests.push({ wd_id: wdId, name: item.name, value: item.value, nft: !!item.nft, uid: u.id, username: u.username || '', first_name: u.first_name || '', status: 'pending', ts: Date.now() });
     NX.save(true); NX.close('modItem'); NX.toast('Заявка на вывод создана (до 7 дней)', 'success');

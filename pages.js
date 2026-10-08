@@ -144,17 +144,23 @@
   }
 
   /* ===== deposit ===== */
-  function payBox(kind) {
+  function payBox(kind, preset) {
     var box = $('payBox');
     if (kind === 'stars') {
-      var R = NX.STARS_PER_TON, pre = [100, 250, 500, 1000];
-      box.innerHTML = '<div class="paynote">Оплата проходит через Telegram Stars в боте. Курс: <b>' + R + ' Stars = 1 TON</b>.</div><div class="qty" style="grid-template-columns:repeat(4,1fr)" id="payPre">' + pre.map(function (v, i) { return '<button type="button" data-a="' + v + '"' + (i === 0 ? ' class="on"' : '') + '>' + v + '</button>'; }).join('') + '</div><input id="payAmt" class="inp" inputmode="numeric" value="' + pre[0] + '" /><div class="hint" id="payGet" style="margin:8px 2px 12px"></div><button type="button" class="btn" id="btnPayGo">Оплатить Stars</button>';
-      var upd = function () { var a = parseInt($('payAmt').value, 10) || 0; $('payGet').textContent = a >= R ? 'Вы получите ' + NX.fmt(a / R) + ' TON' : 'Минимум ' + R + ' Stars (' + 1 + ' TON)'; };
+      var R = NX.STARS_PER_TON, MIN = NX.DEP_MIN_STARS, WA = NX.WD_ACCESS_STARS, pre = [10, 50, 100, 250], first = preset || pre[0];
+      box.innerHTML = '<div class="paynote">Оплата проходит через Telegram Stars в боте. Курс: <b>' + R + ' Stars = 1 TON</b>.</div>' +
+        '<div class="paynote" style="margin-top:8px">Пополнение от <b>' + WA + ' Stars</b> открывает <b>бесплатный вывод подарков от ' + NX.WD_MIN_TON + ' TON на ' + NX.WD_ACCESS_DAYS + ' дн.</b>' + (NX.wdAccessOn() ? ' Сейчас доступ активен ещё ' + NX.wdAccessText() + '.' : '') + '</div>' +
+        '<div class="qty" style="grid-template-columns:repeat(4,1fr)" id="payPre">' + pre.map(function (v) { return '<button type="button" data-a="' + v + '"' + (v === first ? ' class="on"' : '') + '>' + v + '</button>'; }).join('') + '</div>' +
+        '<input id="payAmt" class="inp" inputmode="numeric" value="' + first + '" /><div class="hint" id="payGet" style="margin:8px 2px 12px"></div><button type="button" class="btn" id="btnPayGo">Оплатить Stars</button>';
+      var upd = function () {
+        var a = parseInt($('payAmt').value, 10) || 0;
+        $('payGet').textContent = a >= MIN ? 'Вы получите ' + NX.fmt(a / R) + ' TON' + (a >= WA ? ' + доступ к выводу на ' + NX.WD_ACCESS_DAYS + ' дн.' : '') : 'Минимум ' + MIN + ' Stars';
+      };
       $('payAmt').oninput = upd; upd();
       $('payPre').onclick = function (e) { var b = e.target.closest('[data-a]'); if (!b) return; $('payAmt').value = b.getAttribute('data-a'); upd(); NX.qa('button', $('payPre')).forEach(function (x) { x.classList.toggle('on', x === b); }); NX.haptic('select'); };
       $('btnPayGo').onclick = function () {
         var a = parseInt($('payAmt').value, 10) || 0;
-        if (a < R) { NX.toast('Минимум ' + R + ' Stars', 'error'); return; }
+        if (a < MIN) { NX.toast('Минимум ' + MIN + ' Stars', 'error'); return; }
         var url = 'https://t.me/' + NX.BOT + '?start=pay_' + a;
         try { if (NX.tg && NX.tg.openTelegramLink) NX.tg.openTelegramLink(url); else window.open(url, '_blank'); } catch (e) {}
         NX.close('modPay');
@@ -162,6 +168,10 @@
     } else if (kind === 'gift') promoBox(box, 'dpPromo');
     else box.innerHTML = '<div class="paynote" style="background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--m)">Этот способ пополнения скоро появится.</div>';
   }
+  /* open the Stars top-up window (optionally with a preset amount) from anywhere, e.g. from the withdrawal screen */
+  NX.openDeposit = function (preset) {
+    payBox('stars', preset); NX.qa('#pays button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pay') === 'stars'); }); NX.open('modPay');
+  };
   function bindModals() {
     $('btnDeposit').onclick = function () { NX.sfx('click'); NX.haptic('light'); payBox('stars'); NX.qa('#pays button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pay') === 'stars'); }); NX.open('modPay'); };
     NX.qa('#pays button').forEach(function (b) {

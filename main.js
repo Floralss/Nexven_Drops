@@ -13,12 +13,16 @@
   }
 
   function applyDeepLink(user) {
-    var bal = null, free = false, q, sp;
-    try { q = new URLSearchParams(location.search || ''); if (q.get('sync')) bal = parseFloat(String(q.get('sync')).replace(',', '.')); if (q.get('free') === '1') free = true; } catch (e) {}
+    var bal = null, free = false, acc = null, q, sp, m;
+    try { q = new URLSearchParams(location.search || ''); if (q.get('sync')) bal = parseFloat(String(q.get('sync')).replace(',', '.')); if (q.get('free') === '1') free = true; if (q.get('acc')) acc = parseInt(q.get('acc'), 10); } catch (e) {}
     try {
       if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
         sp = String(tg.initDataUnsafe.start_param);
-        if (sp.indexOf('sync_') === 0) bal = parseFloat(sp.slice(5).replace('_', '.'));  /* sync_12_5 = 12.5 TON */
+        /* sync_12_5 = 12.5 TON; optional access suffix: sync_12_5_acc_1791500000 (withdrawal access until that unix time, seconds); or just acc_1791500000 */
+        m = /^sync_(\d+(?:_\d+)?)(?:_acc_(\d+))?$/.exec(sp);
+        if (m) { bal = parseFloat(m[1].replace('_', '.')); if (m[2]) acc = parseInt(m[2], 10); }
+        else if (sp.indexOf('sync_') === 0) bal = parseFloat(sp.slice(5).replace('_', '.'));
+        else if ((m = /^acc_(\d+)$/.exec(sp))) acc = parseInt(m[1], 10);
         if (sp === 'free_ok') free = true;
       }
     } catch (e) {}
@@ -27,7 +31,21 @@
       bal = NX.r2(bal); user.balance = bal; user.last_sync = bal;
       setTimeout(function () { NX.toast('Баланс синхронизирован: ' + bal + ' TON', 'success'); NX.sfx('win'); }, 900);
     }
+    if (acc && !isNaN(acc)) {
+      var until = acc * 1000;  /* seconds -> ms; never accept more than ~8 days ahead */
+      if (until > Date.now() && until < Date.now() + (NX.WD_ACCESS_DAYS + 1) * 86400000 && until > (user.wd_until || 0)) {
+        user.wd_until = until;
+        setTimeout(function () { NX.toast('Вывод подарков открыт на ' + NX.WD_ACCESS_DAYS + ' дн.', 'success'); NX.sfx('win'); }, 1500);
+      }
+    }
     if (free && !user.free_link_done) { user.last_free = 0; user.free_link_done = true; setTimeout(function () { NX.toast('Бесплатный кейс готов!', 'success'); }, 900); }
+    try {  /* bot rejected / cancelled a withdrawal: give the item back */
+      var wdNo = new URLSearchParams(location.search || '').get('wd_cancel');
+      if (wdNo && user.inventory) {
+        user.inventory.forEach(function (it) { if (it.wd_id && it.status === 'withdrawing' && (String(it.wd_id) === wdNo || String(it.wd_id).slice(-8) === wdNo)) { delete it.status; delete it.wd_id; delete it.wd_at; } });
+        setTimeout(function () { NX.toast('Заявка на вывод отклонена — подарок возвращён в инвентарь', 'error'); }, 900);
+      }
+    } catch (e) {}
     try {
       var wdOk = new URLSearchParams(location.search || '').get('wd_ok');
       if (wdOk && user.inventory) {
