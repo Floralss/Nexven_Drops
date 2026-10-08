@@ -164,7 +164,7 @@
       $('plGo').onclick = drop; $('plHist').onclick = showHistory;
     },
     enter: function () { on = true; cancelAnimationFrame(raf); loop(); },
-    leave: function () { on = false; cancelAnimationFrame(raf); }
+    leave: function () { on = false; try { cancelAnimationFrame(raf); } catch (e) {} raf = 0; try { var c = $('plCanvas'); if (c) { var x = c.getContext('2d'); if (x) x.clearRect(0, 0, c.width, c.height); } } catch (e) {} }
   };
   /* theoretical RTP for tests */
   NX.plinkoRTP = function (k) { var m = RISK[k].m, w = [1, 8, 28, 56, 70, 56, 28, 8, 1], s = 0, i; for (i = 0; i < 9; i++) s += w[i] * m[i]; return s / 256; };

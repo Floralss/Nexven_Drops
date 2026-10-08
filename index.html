@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=23" />
+  <link rel="stylesheet" href="style.css?v=20" />
 </head>
 <body>
   <div id="loader">
@@ -37,6 +37,9 @@
       </button>
       <button type="button" class="nb on" data-t="games" aria-label="Игры">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12.9 2.4l7.1 4.1a1.8 1.8 0 0 1 .9 1.5v8a1.8 1.8 0 0 1-.9 1.5l-7.1 4.1a1.8 1.8 0 0 1-1.8 0L4 17.5A1.8 1.8 0 0 1 3.1 16V8A1.8 1.8 0 0 1 4 6.5l7.1-4.1a1.8 1.8 0 0 1 1.8 0z" opacity=".95"/><g fill="#0c0d12"><circle cx="8.6" cy="9.1" r="1.25"/><circle cx="15.4" cy="9.1" r="1.25"/><circle cx="12" cy="12.5" r="1.25"/><circle cx="8.6" cy="15.9" r="1.25"/><circle cx="15.4" cy="15.9" r="1.25"/></g></svg>
+      </button>
+      <button type="button" class="nb" data-t="promo" aria-label="Промокоды">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.2a1.8 1.8 0 0 0 0 3.6V16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.2a1.8 1.8 0 0 0 0-3.6z"/><path d="M14.5 7v10" stroke-dasharray="1.8 2.4"/></svg>
       </button>
       <button type="button" class="nb" data-t="profile" aria-label="Профиль">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><circle cx="12" cy="7.5" r="4.3"/><path d="M3.8 20.2c0-4.1 3.6-6.6 8.2-6.6s8.2 2.5 8.2 6.6c0 .7-.5 1.1-1.1 1.1H4.9c-.6 0-1.1-.4-1.1-1.1z"/></svg>
@@ -105,8 +108,8 @@
           <button type="button" class="btn" id="btnAdmGive">Выдать TON</button>
           <button type="button" class="btn ghost" id="btnAdmTake">Забрать TON</button>
           <button type="button" class="btn ghost" id="btnAdmFree">Сбросить бесплатный кейс</button>
+          <button type="button" class="btn gold" id="btnAdmPromo">Промокоды (создать / список)</button>
           <div id="admRes" class="hint"></div>
-          <div id="admPick"></div>
         </div>
       </div>
     </div>
@@ -115,18 +118,19 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="art.js?v=23"></script>
-  <script src="gifts.js?v=23"></script>
-  <script src="config.js?v=23"></script>
-  <script src="core.js?v=23"></script>
-  <script src="cases.js?v=23"></script>
-  <script src="plinko.js?v=23"></script>
-  <script src="mines.js?v=23"></script>
-  <script src="crash.js?v=23"></script>
-  <script src="roulette.js?v=23"></script>
-  <script src="craft.js?v=23"></script>
-  <script src="social.js?v=23"></script>
-  <script src="pages.js?v=23"></script>
-  <script src="main.js?v=23"></script>
+  <script src="art.js?v=13"></script>
+  <script src="gifts.js?v=13"></script>
+  <script src="config.js?v=14"></script>
+  <script src="core.js?v=20"></script>
+  <script src="cases.js?v=20"></script>
+  <script src="plinko.js?v=13"></script>
+  <script src="mines.js?v=13"></script>
+  <script src="crash.js?v=13"></script>
+  <script src="roulette.js?v=13"></script>
+  <script src="craft.js?v=13"></script>
+  <script src="promo.js?v=1"></script>
+  <script src="social.js?v=20"></script>
+  <script src="pages.js?v=20"></script>
+  <script src="main.js?v=20"></script>
 </body>
 </html>

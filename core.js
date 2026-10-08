@@ -12,8 +12,11 @@
   }
 
   NX.OWNER_ID = 8920532333;
-  NX.ADMIN_IDS = [7064801154, 8866989412];
+  NX.ADMIN_IDS = [7064801154, 8866989412, 5198310704, 8133917568];
   NX.BOT = 'nexvendrop_bot';
+  NX.CHANNEL = 'https://t.me/nexvendrop';
+  /* вывод подарков: пополнение WD_STARS одним платежом открывает вывод на WD_DAYS дней (окончательная проверка — в боте) */
+  NX.WD_STARS = 100; NX.WD_DAYS = 7; NX.WD_MIN = 1;
   var LS = 'iz_v6_', CS_KEY = 'iz_user_v6';
 
   /* ---------- tiny helpers ---------- */
@@ -118,18 +121,12 @@
   };
   NX.isOwner = function () { return user && NX.sameId(user.id, NX.OWNER_ID); };
 
-  function slimStats(st) {
-    st = st || {}; var o = {}, k;
-    for (k in st) o[k] = st[k];
-    if (o.pl && o.pl.length > 15) o.pl = o.pl.slice(-15);
-    return o;
-  }
   function pack() {
     return JSON.stringify({
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
-      stats: slimStats(user.stats), pend: user.pend || [], mn: user.mn || null, wd_requests: (user.wd_requests || []).slice(-15),
-      grants_done: (user.grants_done || []).slice(-60), last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
+      stats: user.stats || {}, pend: user.pend || [], mn: user.mn || null, wd_requests: user.wd_requests || [],
+      wd_until: user.wd_until || 0, applied: user.applied || [], promo_log: user.promo_log || [], updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
@@ -146,65 +143,38 @@
       if (Array.isArray(d.pend)) into.pend = d.pend;
       if (d.mn !== undefined) into.mn = d.mn;
       if (Array.isArray(d.wd_requests)) into.wd_requests = d.wd_requests;
-      if (Array.isArray(d.grants_done)) into.grants_done = d.grants_done;
-      if (d.last_sync !== undefined) into.last_sync = d.last_sync;
+      if (typeof d.wd_until === 'number') into.wd_until = Math.max(into.wd_until || 0, d.wd_until);
+      if (Array.isArray(d.applied)) into.applied = d.applied;
+      if (Array.isArray(d.promo_log)) into.promo_log = d.promo_log;
       into._updated = d.updated_at || 0;
     } catch (e) {}
     return into;
   }
   NX.pack = pack; NX.unpack = unpack;
   NX.loadLocal = function (id) { try { var r = localStorage.getItem(LS + id); return r ? JSON.parse(r) : null; } catch (e) { return null; } };
-  function saveLocal() { if (user) try { localStorage.setItem(LS + user.id, pack()); NX.lastSaved = Date.now(); } catch (e) {} }
-  var CH = 3600, cloudBusy = false, cloudDirty = false;
-  NX.lastSaved = 0;
+  function saveLocal() { if (user) try { localStorage.setItem(LS + user.id, pack()); } catch (e) {} }
   NX.cloudSave = function () {
     saveLocal();
     if (!tg || !tg.CloudStorage) return;
-    if (cloudBusy) { cloudDirty = true; return; }
-    cloudBusy = true; cloudDirty = false;
-    var s, parts = [], i;
-    try { s = pack(); for (i = 0; i < s.length; i += CH) parts.push(s.slice(i, i + CH)); } catch (e) { cloudBusy = false; return; }
-    var k = 0, n = parts.length, st = tg.CloudStorage;
-    function finish() { cloudBusy = false; if (cloudDirty) NX.cloudSave(); }
-    (function next() {
-      try {
-        if (k < n) st.setItem('nx7_' + k, parts[k], function (err) { if (err) { finish(); return; } k++; next(); });
-        else st.setItem('nx7_n', String(n), function () { finish(); });
-      } catch (e) { finish(); }
-    })();
+    try { tg.CloudStorage.setItem(CS_KEY, pack(), function () {}); } catch (e) {}
   };
   NX.cloudLoad = function (cb) {
     if (!tg || !tg.CloudStorage) { cb(null); return; }
-    var done = false, t = setTimeout(function () { fin(null); }, 3000);
-    function fin(v) { if (done) return; done = true; clearTimeout(t); cb(v); }
-    function legacy() {
-      try { tg.CloudStorage.getItem(CS_KEY, function (err, val) { if (err || !val) { fin(null); return; } try { fin(JSON.parse(val)); } catch (e) { fin(null); } }); } catch (e) { fin(null); }
-    }
+    var done = false;
+    var t = setTimeout(function () { if (!done) { done = true; cb(null); } }, 2500);
     try {
-      tg.CloudStorage.getItem('nx7_n', function (err, n) {
-        n = parseInt(n, 10);
-        if (err || !n) { legacy(); return; }
-        var keys = [], i; for (i = 0; i < n; i++) keys.push('nx7_' + i);
-        tg.CloudStorage.getItems(keys, function (err2, vals) {
-          if (err2 || !vals) { legacy(); return; }
-          var s = ''; for (i = 0; i < n; i++) s += vals['nx7_' + i] || '';
-          try { fin(JSON.parse(s)); } catch (e) { legacy(); }
-        });
+      tg.CloudStorage.getItem(CS_KEY, function (err, val) {
+        if (done) return; done = true; clearTimeout(t);
+        if (err || !val) { cb(null); return; }
+        try { cb(JSON.parse(val)); } catch (e) { cb(null); }
       });
-    } catch (e) { legacy(); }
+    } catch (e) { if (!done) { done = true; clearTimeout(t); cb(null); } }
   };
   var saveT = null;
-  NX.ready = false;
-  function persist(now) {
-    NX.cloudSave();
-    if (NX.net) NX.net.saveState(now);
-  }
   NX.save = function (now) {
-    saveLocal(); touchLb();
-    if (!NX.ready) return;
-    if (NX.net) NX.net.push();
-    if (now) { clearTimeout(saveT); persist(true); return; }
-    clearTimeout(saveT); saveT = setTimeout(function () { persist(false); }, 700);
+    saveLocal(); touchLb(); if (NX.net) NX.net.push();
+    if (now) { NX.cloudSave(); return; }
+    clearTimeout(saveT); saveT = setTimeout(NX.cloudSave, 600);
   };
   NX.setUser = function (u) { user = u; };
 
@@ -251,7 +221,10 @@
     NX.save(); NX.renderUser();
   };
   NX.credit = function (amt) {
-    amt = NX.r2(amt); if (!amt) return; user.balance = NX.r2(user.balance + amt); NX.save(); NX.renderUser();
+    amt = NX.r2(amt); if (!amt) return;
+    user.balance = NX.r2(user.balance + amt);
+    NX.save(true);
+    NX.renderUser();
   };
   NX.stat = function (k, inc) { user.stats = user.stats || {}; user.stats[k] = (user.stats[k] || 0) + (inc == null ? 1 : inc); };
   NX.noteBest = function (name, value) {
@@ -264,6 +237,50 @@
     user.inventory.unshift(e);
     NX.noteBest(it.name, it.value);
     return e;
+  };
+
+  /* ---------- вывод подарков: открыто ли окно ---------- */
+  NX.wdOpen = function () { return !!user && (user.wd_until || 0) > Date.now(); };
+  NX.fmtDate = function (ms) {
+    var d = new Date(ms), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '.' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  };
+
+  NX.openBot = function (startParam) {
+    var url = 'https://t.me/' + NX.BOT + '?start=' + startParam;
+    try { if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else w.open(url, '_blank'); } catch (e) {}
+  };
+
+  /* ---------- награды от бота (промокоды, пополнения, выдача админом) ----------
+     Награда {id, src, ton?, free?, gifts?, wdu?, code?}. Применяется один раз: id запоминается в user.applied. */
+  NX.applyReward = function (r, opt) {
+    opt = opt || {};
+    if (!user || !r || r.id == null) return null;
+    var id = String(r.id); user.applied = user.applied || [];
+    if (user.applied.indexOf(id) >= 0) return null;
+    var parts = [], ton = Number(r.ton) || 0;
+    if (ton > 0) { user.balance = NX.r2(user.balance + ton); parts.push('+' + NX.fmt(ton) + ' TON'); }
+    else if (ton < 0) { user.balance = Math.max(0, NX.r2(user.balance + ton)); parts.push(NX.fmt(ton) + ' TON'); }
+    if (r.free) { user.last_free = 0; parts.push('бесплатный кейс'); }
+    (Array.isArray(r.gifts) ? r.gifts : []).forEach(function (n) {
+      var gi = w.giftInfo ? w.giftInfo(n) : { value: 10, nft: false };
+      NX.addItem({ name: String(n), value: gi.value, nft: !!gi.nft }); parts.push(String(n));
+    });
+    var wdu = Number(r.wdu) || 0, opened = false;
+    if (wdu > (user.wd_until || 0)) { user.wd_until = wdu; opened = true; }
+    user.applied.push(id); if (user.applied.length > 200) user.applied = user.applied.slice(-200);
+    var what = parts.join(' · ');
+    if (r.src === 'promo') {
+      user.promo_log = user.promo_log || [];
+      user.promo_log.unshift({ code: String(r.code || ''), text: what, ts: Date.now() });
+      if (user.promo_log.length > 30) user.promo_log.length = 30;
+    }
+    NX.save(true); NX.renderUser();
+    var msg = r.src === 'promo' ? 'Промокод ' + (r.code || '') + ': ' + what
+      : r.src === 'deposit' ? 'Пополнение: ' + what + (opened ? ' · вывод открыт до ' + NX.fmtDate(user.wd_until) : '')
+      : 'Получено: ' + what;
+    if (!opt.silent) { NX.toast(msg, 'success'); NX.sfx('win'); NX.haptic('success'); }
+    return msg;
   };
 
   /* ---------- pending (deterministic delayed payouts, survives app close) ---------- */
@@ -294,8 +311,8 @@
   });
 
   /* ---------- routing ---------- */
-  var TAB_OF = { cases: 'cases', top: 'top', games: 'games', profile: 'profile', plinko: 'games', mines: 'games', crash: 'games', roulette: 'games', craft: 'games' };
-  var TAB_ORDER = ['cases', 'top', 'games', 'profile'];
+  var TAB_OF = { cases: 'cases', top: 'top', games: 'games', promo: 'promo', profile: 'profile', plinko: 'games', mines: 'games', crash: 'games', roulette: 'games', craft: 'games' };
+  var TAB_ORDER = ['cases', 'top', 'games', 'promo', 'profile'];
   var cur = null;
   NX.cur = function () { return cur; };
   NX.go = function (name, opt) {
@@ -303,27 +320,28 @@
     opt = opt || {};
     if (cur === name && !opt.force) return;
     var from = cur;
-    try { if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave(); } catch (e) { console.error(e); }
+    try {
+      if (from && NX.pages[from] && NX.pages[from].leave) NX.pages[from].leave();
+    } catch (e) { try { console.warn('leave', from, e); } catch (er) {} }
     cur = name;
-    NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
-    var v = $('v-' + name);
-    if (opt.back) v.classList.add('back');
-    void v.offsetWidth; v.classList.add('on');
-    var tab = TAB_OF[name];
-    NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
-    var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
-    w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
-    try { if (NX.pages[name].enter) NX.pages[name].enter(); } catch (e) { console.error(e); }
-    try { if (tg && tg.BackButton) { if (tab === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
+    try {
+      NX.qa('.view').forEach(function (v) { v.classList.remove('on', 'back'); });
+      var v = $('v-' + name);
+      if (v) {
+        if (opt.back) v.classList.add('back');
+        void v.offsetWidth; v.classList.add('on');
+      }
+      var tab = TAB_OF[name];
+      NX.qa('.nb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
+      var gi = TAB_ORDER.indexOf(tab); var gl = $('dockGlow'); if (gl && gi >= 0) gl.style.transform = 'translateX(' + (gi * 100) + '%)';
+      w.scrollTo(0, 0); try { doc.scrollingElement.scrollTop = 0; } catch (e) {}
+    } catch (e) { try { console.warn('go view', name, e); } catch (er) {} }
+    try {
+      if (NX.pages[name].enter) NX.pages[name].enter();
+    } catch (e) { try { console.warn('enter', name, e); } catch (er) {} }
+    try { if (tg && tg.BackButton) { if (TAB_OF[name] === 'games' && name !== 'games') tg.BackButton.show(); else tg.BackButton.hide(); } } catch (e) {}
   };
-  /* back: first close an open sheet / modal, otherwise leave the game */
-  NX.back = function () {
-    var sp = $('spin');
-    if (sp && sp.classList.contains('on')) { if (NX.skipSpin) NX.skipSpin(); return; }
-    var open = NX.qa('.mod.on, .sheet.on');
-    if (open.length) { open[open.length - 1].classList.remove('on'); return; }
-    NX.go('games', { back: true });
-  };
+  NX.back = function () { NX.go('games', { back: true }); };
   NX.pageHead = function (title, sub, right) {
     return '<div class="phead"><button type="button" class="back" data-back aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div><div class="ptitle">' + title + '</div>' + (sub ? '<div class="psub">' + sub + '</div>' : '') + '</div>' + (right ? '<div class="rt">' + right + '</div>' : '') + '</div>';
   };

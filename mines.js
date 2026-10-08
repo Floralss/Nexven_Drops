@@ -104,7 +104,8 @@
       $('mnCount').onclick = function (e) { var b = e.target.closest('button'); if (!b || b.disabled) return; cfgMines = Number(b.getAttribute('data-n')); NX.sfx('click'); NX.haptic('select'); render(); };
       $('mnGo').onclick = function () { if (NX.user().mn) cash(); else start(); };
     },
-    enter: function () { var g = NX.user().mn; if (g) { cfgMines = g.mines; bet.set(g.bet); } render(); }
+    enter: function () { var g = NX.user().mn; if (g) { cfgMines = g.mines; bet.set(g.bet); } render(); },
+    leave: function () { /* keep mn state so game can resume */ }
   };
   NX.minesMult = mult;
 })(window.NX);
