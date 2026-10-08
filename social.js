@@ -205,6 +205,7 @@
     } catch (e) {}
   };
   var polling2 = false;
+  function refHint(t) { try { var el = document.getElementById('refSync'); if (el) el.textContent = t || ''; } catch (e) {} }
   net.pollRewards = function () {
     var u = NX.user(); if (!net.enabled() || !u || !NX.ready || polling2) return; polling2 = true;
     http(base() + '/' + C('rewards') + '/' + encodeURIComponent(String(u.id)) + '?' + key())
@@ -217,8 +218,9 @@
         var wd = j && j.fields && j.fields.wd_until && Number(j.fields.wd_until.integerValue || 0);
         if (wd && wd > (u.wd_until || 0)) { u.wd_until = wd; NX.save(); }
         net.applyRewards(list);
+        if (!(u.refs || []).length) refHint('Синхронизация: данных от бота пока нет');
       })
-      .catch(function () { polling2 = false; });
+      .catch(function (e) { polling2 = false; refHint(e && e.status === 404 ? 'Синхронизация: от бота пока ничего нет (документ не создан — проверь /fscheck в боте)' : 'Синхронизация: ' + (net.err || (e && e.message) || 'ошибка')); });
   };
   var polling = false;
   net.pollGrants = function () {

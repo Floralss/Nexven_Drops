@@ -89,6 +89,7 @@
   NX.pages.profile = {
     build: function () { $('v-profile').innerHTML = '<div id="profBody"></div>'; },
     enter: function () {
+      try { if (NX.net && NX.net.pollRewards) NX.net.pollRewards(true); } catch (e) {}
       var u = NX.user(), staff = NX.isStaff(), role = NX.isOwner() ? 'Владелец' : staff ? 'Админ' : 'Игрок';
       var link = 'https://t.me/' + NX.BOT + '?start=ref_' + u.id, rl = refs();
       var av = u.photo_url ? '<img src="' + NX.esc(u.photo_url) + '" alt="">' : NX.esc(((u.first_name || '?')[0] || '?').toUpperCase());
@@ -99,7 +100,7 @@
         '<div class="pst"><small>Открыто кейсов</small><b>' + ((u.stats && u.stats.opened) || 0) + '</b></div><div class="pst"><small>Предметов</small><b>' + invCount + '</b></div></div>' +
         '<div class="sec" style="display:flex;justify-content:space-between;align-items:baseline">Инвентарь<span class="hint">' + (invCount ? NX.fmt(invSum) + ' TON' : '') + '</span></div><div id="profInv"></div>' +
         '<div class="refbox"><b style="font-size:16px">Приглашай друзей — 2% с пополнения</b><div class="lnk">' + link + '</div>' +
-        (rl.length ? rl.map(function (r) { return '<div class="rrow"><span>' + NX.esc(r.name) + '</span><b>' + NX.fmt(r.earned) + ' TON · 2%</b></div>'; }).join('') + '<div style="height:10px"></div>' : '<div class="hint" style="margin-bottom:12px">Пока никого нет</div>') +
+        (rl.length ? rl.map(function (r) { return '<div class="rrow"><span>' + NX.esc(r.name) + '</span><b>' + NX.fmt(r.earned) + ' TON · 2%</b></div>'; }).join('') + '<div style="height:10px"></div>' : '<div class="hint" style="margin-bottom:12px">Пока никого нет</div><div class="hint" id="refSync" style="margin:-6px 0 12px;font-size:11px;opacity:.7"></div>') +
         '<button type="button" class="btn green" id="btnRef">Пригласить</button><a class="btn ghost" id="btnSupport" href="https://t.me/nexvendropmananger" target="_blank" rel="noopener" style="margin-top:10px">Поддержка</a></div>' +
         '<div class="card" style="margin-top:12px"><div class="lab" style="margin:0 0 10px">Промокод</div><div id="profPromo"></div></div>' +
         '<div class="card" style="margin-top:12px"><div class="sw-row"><span>Звуки</span><label class="sw"><input type="checkbox" id="sndOn"' + (NX.isMuted() ? '' : ' checked') + '><i></i></label></div></div>' +
