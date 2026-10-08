@@ -34,7 +34,7 @@
      3) NFT gifts are in TON = approximate marketplace floor (Getgems / Portals / Tonnel). Floors move: edit the numbers below.
         NFTs marked "est." were added later and their floor is an estimate: check it against the market before launch.
      The case contents and chances live in cases.js (generated so every paid case returns ~90% and pays back its price in ~30-37% of openings). */
-  var RATE = Number((w.NEXVEN_CFG || {}).starsPerTon) || 100;
+  var RATE = Number((w.NEXVEN_CFG || {}).starsPerTon) || 109.89;
   function st(stars) { return Math.round(stars / RATE * 100) / 100; }
   var G = {
     /* cash prizes */

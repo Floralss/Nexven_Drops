@@ -35,7 +35,10 @@
     while (y >= 1000 && i < u.length - 1) { y /= 1000; i++; }
     return (Math.round(y * 100) / 100).toLocaleString('ru-RU') + u[i];
   };
-  NX.STARS_PER_TON = Number((window.NEXVEN_CFG || {}).starsPerTon) || 100;
+  NX.TON_PER_STAR = Number((window.NEXVEN_CFG || {}).tonPerStar) || 0.0091;
+  NX.STARS_PER_TON = 1 / NX.TON_PER_STAR;
+  NX.stars2ton = function (s) { return Math.round(s * NX.TON_PER_STAR * 10000) / 10000; };
+  NX.fmt4 = function (x) { try { return (Math.round((Number(x) || 0) * 10000) / 10000).toLocaleString('ru-RU', { maximumFractionDigits: 4 }); } catch (e) { return String(x); } };
   (function () {
     var c = window.NEXVEN_CFG || {};
     NX.DEP_MIN_STARS = Number(c.depositMinStars) || 10;

@@ -147,14 +147,14 @@
   function payBox(kind, preset) {
     var box = $('payBox');
     if (kind === 'stars') {
-      var R = NX.STARS_PER_TON, MIN = NX.DEP_MIN_STARS, WA = NX.WD_ACCESS_STARS, pre = [10, 50, 100, 250], first = preset || pre[0];
-      box.innerHTML = '<div class="paynote">Оплата проходит через Telegram Stars в боте. Курс: <b>' + R + ' Stars = 1 TON</b>.</div>' +
+      var MIN = NX.DEP_MIN_STARS, WA = NX.WD_ACCESS_STARS, pre = [10, 50, 100, 250], first = preset || pre[0];
+      box.innerHTML = '<div class="paynote">Оплата проходит через Telegram Stars в боте. Курс: <b>1 Star = ' + NX.fmt4(NX.TON_PER_STAR) + ' TON</b>.</div>' +
         '<div class="paynote" style="margin-top:8px">Пополнение от <b>' + WA + ' Stars</b> открывает <b>бесплатный вывод подарков от ' + NX.WD_MIN_TON + ' TON на ' + NX.WD_ACCESS_DAYS + ' дн.</b>' + (NX.wdAccessOn() ? ' Сейчас доступ активен ещё ' + NX.wdAccessText() + '.' : '') + '</div>' +
         '<div class="qty" style="grid-template-columns:repeat(4,1fr)" id="payPre">' + pre.map(function (v) { return '<button type="button" data-a="' + v + '"' + (v === first ? ' class="on"' : '') + '>' + v + '</button>'; }).join('') + '</div>' +
         '<input id="payAmt" class="inp" inputmode="numeric" value="' + first + '" /><div class="hint" id="payGet" style="margin:8px 2px 12px"></div><button type="button" class="btn" id="btnPayGo">Оплатить Stars</button>';
       var upd = function () {
         var a = parseInt($('payAmt').value, 10) || 0;
-        $('payGet').textContent = a >= MIN ? 'Вы получите ' + NX.fmt(a / R) + ' TON' + (a >= WA ? ' + доступ к выводу на ' + NX.WD_ACCESS_DAYS + ' дн.' : '') : 'Минимум ' + MIN + ' Stars';
+        $('payGet').textContent = a >= MIN ? 'Вы получите ' + NX.fmt4(NX.stars2ton(a)) + ' TON' + (a >= WA ? ' + доступ к выводу на ' + NX.WD_ACCESS_DAYS + ' дн.' : '') : 'Минимум ' + MIN + ' Stars';
       };
       $('payAmt').oninput = upd; upd();
       $('payPre').onclick = function (e) { var b = e.target.closest('[data-a]'); if (!b) return; $('payAmt').value = b.getAttribute('data-a'); upd(); NX.qa('button', $('payPre')).forEach(function (x) { x.classList.toggle('on', x === b); }); NX.haptic('select'); };
