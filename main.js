@@ -56,20 +56,6 @@
     } catch (e) {}
   }
 
-  function trackReferral(user) {
-    try {
-      var sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
-      if (sp && String(sp).indexOf('ref_') === 0) {
-        var inviter = String(sp).slice(4);
-        if (inviter && inviter !== String(user.id)) {
-          var key = 'nv_refs_' + inviter, arr = [];
-          try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
-          if (!arr.some(function (r) { return String(r.id) === String(user.id); })) { arr.push({ id: user.id, name: user.first_name || 'Друг', earned: 0 }); localStorage.setItem(key, JSON.stringify(arr)); }
-        }
-      }
-    } catch (e) {}
-  }
-
   function boot() {
     var fill = $('ldFill'); function prog(p) { if (fill) fill.style.width = p + '%'; }
     $('ldLogo').innerHTML = window.ART.logo(84); $('balIcon').innerHTML = NX.tonI(22);
@@ -78,7 +64,7 @@
     var user = { id: tu.id, first_name: tu.first_name || 'Игрок', username: tu.username || '', photo_url: tu.photo_url || null,
       balance: 0, inventory: [], inventory_cs2: [], last_free: 0, total_deposited: 0, total_spent: 0, stats: {}, pend: [], mn: null, wd_requests: [], _updated: 0 };
     if (loc) NX.unpack(loc, user);
-    NX.setUser(user); trackReferral(user);
+    NX.setUser(user);
     prog(45);
     var started = false, got = { cloud: undefined, remote: undefined };
     function newest() {

@@ -151,7 +151,14 @@
           amt = f.amount ? Number(f.amount.doubleValue != null ? f.amount.doubleValue : f.amount.integerValue || 0) : 0;
           u.grants_done = u.grants_done || [];
           var seen = u.grants_done.indexOf(gid) >= 0;
-          if (!seen) {
+          if (!seen && type === 'ref') {
+            var rid = str(f.uid), rname = str(f.name) || 'Друг', row = null;
+            u.refs = u.refs || [];
+            u.refs.forEach(function (r) { if (String(r.id) === rid) row = r; });
+            if (!row) { u.refs.push({ id: rid, name: rname, earned: 0 }); msgs.push('Новый реферал: ' + rname); changed = true; row = u.refs[u.refs.length - 1]; }
+            if (amt > 0) row.earned = NX.r2((row.earned || 0) + amt);  /* TON itself is credited by the bot; this is only the counter */
+            u.grants_done.push(gid); changed = true;
+          } else if (!seen) {
             var okBy = (type === 'ton' || type === 'reset') ? NX.sameId(by, NX.OWNER_ID) : (NX.sameId(by, NX.OWNER_ID) || NX.ADMIN_IDS.some(function (id) { return NX.sameId(by, id); }));
             if (okBy) {
               if (type === 'ton') { u.balance = NX.r2(Math.max(0, u.balance + amt)); msgs.push((amt >= 0 ? 'Вам начислено +' : 'Списано ') + NX.fmt(Math.abs(amt)) + ' TON'); }

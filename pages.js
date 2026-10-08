@@ -85,7 +85,7 @@
   };
 
   /* ===== profile ===== */
-  function refs() { try { return JSON.parse(localStorage.getItem('nv_refs_' + NX.user().id) || '[]'); } catch (e) { return []; } }
+  function refs() { return (NX.user() && NX.user().refs) || []; }
   NX.pages.profile = {
     build: function () { $('v-profile').innerHTML = '<div id="profBody"></div>'; },
     enter: function () {

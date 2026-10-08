@@ -157,7 +157,7 @@
       balance: NX.r2(user.balance), inventory: user.inventory || [], inventory_cs2: user.inventory_cs2 || [],
       last_free: user.last_free || 0, total_deposited: user.total_deposited || 0, total_spent: NX.r2(user.total_spent || 0),
       stats: slimStats(user.stats), pend: user.pend || [], mn: user.mn || null, wd_requests: (user.wd_requests || []).slice(-15),
-      grants_done: (user.grants_done || []).slice(-60), wd_until: user.wd_until || 0, last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
+      grants_done: (user.grants_done || []).slice(-60), refs: (user.refs || []).slice(-200), wd_until: user.wd_until || 0, last_sync: user.last_sync == null ? null : user.last_sync, updated_at: Date.now()
     });
   }
   function unpack(raw, into) {
@@ -175,6 +175,7 @@
       if (d.mn !== undefined) into.mn = d.mn;
       if (Array.isArray(d.wd_requests)) into.wd_requests = d.wd_requests;
       if (Array.isArray(d.grants_done)) into.grants_done = d.grants_done;
+      if (Array.isArray(d.refs)) into.refs = d.refs;
       if (typeof d.wd_until === 'number') into.wd_until = Math.max(into.wd_until || 0, d.wd_until);
       if (d.last_sync !== undefined) into.last_sync = d.last_sync;
       into._updated = d.updated_at || 0;
