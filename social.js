@@ -16,6 +16,7 @@
   function errText(status, body) {
     var m = '';
     try { m = (JSON.parse(body).error || {}).message || ''; } catch (e) {}
+    if (status === 429) return 'Лимит базы на сегодня исчерпан — сбросится около 10:00 по Киеву. Показаны последние сохранённые данные';
     if (status === 403) return 'Firestore 403: ' + (m ? m.slice(0, 140) : 'доступ запрещён') + (/referer|blocked|API key|API_KEY/i.test(m) ? ' → в Google Cloud снимите ограничение с ключа' : '');
     if (status === 404) return 'Firestore: база не создана (404). Создайте Firestore Database в консоли';
     if (status === 400) return 'Firestore 400: ' + m.slice(0, 80);
@@ -97,7 +98,12 @@
   net.fetchBoard = function (force) {
     if (!force && boardCache && Date.now() - boardAt < 60000) return Promise.resolve(boardCache);
     if (boardP) return boardP;
-    boardP = fetchBoardRaw().then(function (b) { boardCache = b; boardAt = Date.now(); boardP = null; return b; }, function (e) { boardP = null; if (boardCache) return boardCache; throw e; });
+    boardP = fetchBoardRaw().then(function (b) { boardCache = b; boardAt = Date.now(); boardP = null; try { localStorage.setItem('nv_board', JSON.stringify({ t: Date.now(), b: b })); } catch (e) {} return b; },
+      function (e) {
+        boardP = null; if (boardCache) return boardCache;
+        try { var o = JSON.parse(localStorage.getItem('nv_board') || 'null'); if (o && o.b) { boardCache = o.b; boardAt = Date.now() - 30000; return o.b; } } catch (x) {}
+        throw e;
+      });
     return boardP;
   };
   net.fetchOnline = function () { return net.fetchBoard().then(function (b) { return b.online; }); };
