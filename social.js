@@ -1,7 +1,7 @@
 /* Nexven Drop — shared leaderboard + online presence (Firestore REST) */
 (function (NX) {
   'use strict';
-  var cfg = window.NEXVEN_CFG || {}, ONLINE_MS = 70000, HEART_MS = 20000;
+  var cfg = window.NEXVEN_CFG || {}, ONLINE_MS = 150000, HEART_MS = 60000;  /* v35: fewer Firestore reads/writes (free quota) */
   var net = NX.net = {};
   net.enabled = function () { return !!(cfg.projectId && cfg.apiKey); };
   var dbs = cfg.databases || [cfg.database || '(default)'], dbi = 0;
@@ -40,7 +40,7 @@
   var lastPush = 0, inflight = false;
   net.push = function (force) {
     var u = NX.user(); if (!net.enabled() || !u) return;
-    var now = Date.now(); if (!force && now - lastPush < 8000) return;
+    var now = Date.now(); if (!force && now - lastPush < 30000) return;
     if (inflight && !force) return;
     lastPush = now; inflight = true;
     var best = (u.stats && u.stats.best) || {};
@@ -66,30 +66,54 @@
     }
     return page('');
   }
-  /* -> { rows:[{id,name,photo,spent,best,online,seen}], online:N } */
-  net.fetchBoard = function () {
+  /* -> { rows:[{id,name,photo,spent,best,online,seen}], online:N }
+     v35: reads only the top 50 players (orderBy spent) + a COUNT aggregation for "online" (1 read per 1000 matches), cached for 60s.
+     Falls back to the old full listing if the queries are refused. */
+  var boardCache = null, boardAt = 0, boardP = null;
+  function rowOf(d, cutoff) {
+    var f = d.fields || {}, id = str(f.uid) || d.name.split('/').pop(), seen = num(f.seen);
+    return { id: id, name: str(f.name) || 'Игрок', photo: str(f.photo) || null, spent: num(f.spent), best: str(f.bestN) ? { name: str(f.bestN), value: num(f.bestV) } : null, online: seen >= cutoff, seen: seen };
+  }
+  function fetchBoardRaw() {
     var cutoff = Date.now() - ONLINE_MS;
-    return listPlayers().then(function (docs) {
-      var n = 0;
-      var rows = docs.map(function (d) {
-        var f = d.fields || {}, id = str(f.uid) || d.name.split('/').pop(), seen = num(f.seen), on = seen >= cutoff;
-        if (on) n++;
-        return { id: id, name: str(f.name) || 'Игрок', photo: str(f.photo) || null, spent: num(f.spent), best: str(f.bestN) ? { name: str(f.bestN), value: num(f.bestV) } : null, online: on, seen: seen };
+    var top = query({ from: [{ collectionId: C('players') }], orderBy: [{ field: { fieldPath: 'spent' }, direction: 'DESCENDING' }], limit: 50 })
+      .then(function (res) { return res.filter(function (x) { return x.document; }).map(function (x) { return rowOf(x.document, cutoff); }); });
+    var online = http(base() + ':runAggregationQuery?' + key(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredAggregationQuery: { structuredQuery: { from: [{ collectionId: C('players') }], where: { fieldFilter: { field: { fieldPath: 'seen' }, op: 'GREATER_THAN_OR_EQUAL', value: { integerValue: String(cutoff) } } } }, aggregations: [{ alias: 'n', count: {} }] } }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { var f = j && j[0] && j[0].result && j[0].result.aggregateFields && j[0].result.aggregateFields.n; return f ? Number(f.integerValue || 0) : null; })
+      .catch(function () { return null; });
+    return Promise.all([top, online]).then(function (r) {
+      var rows = r[0]; rows.sort(function (a, b) { return b.spent - a.spent || b.seen - a.seen; });
+      var n = r[1] != null ? r[1] : rows.filter(function (x) { return x.online; }).length;
+      return { rows: rows, online: n, total: rows.length };
+    }).catch(function (e) {
+      if (e && e.status === 429) throw e;
+      return listPlayers().then(function (docs) {
+        var rows = docs.map(function (d) { return rowOf(d, cutoff); }); rows.sort(function (a, b) { return b.spent - a.spent || b.seen - a.seen; });
+        return { rows: rows.slice(0, 200), online: rows.filter(function (x) { return x.online; }).length, total: rows.length };
       });
-      rows.sort(function (a, b) { return b.spent - a.spent || b.seen - a.seen; });
-      return { rows: rows.slice(0, 200), online: n, total: rows.length };
     });
+  }
+  net.fetchBoard = function (force) {
+    if (!force && boardCache && Date.now() - boardAt < 60000) return Promise.resolve(boardCache);
+    if (boardP) return boardP;
+    boardP = fetchBoardRaw().then(function (b) { boardCache = b; boardAt = Date.now(); boardP = null; return b; }, function (e) { boardP = null; if (boardCache) return boardCache; throw e; });
+    return boardP;
   };
   net.fetchOnline = function () { return net.fetchBoard().then(function (b) { return b.online; }); };
+  try { document.addEventListener('visibilitychange', function () { if (document.hidden) net.saveState(true, true); }); } catch (e) {}
 
   /* ---------- full state in Firestore (survives reinstall / other device) ---------- */
   net.loaded = false;
   var stInflight = false, stDirty = false, stT = null;
-  net.saveState = function (now) {
+  var lastSt = 0;
+  net.saveState = function (now, force) {
     var u = NX.user(); if (!net.enabled() || !u || !net.loaded) return;
     if (!now) { clearTimeout(stT); stT = setTimeout(function () { net.saveState(true); }, 2500); return; }
     if (stInflight) { stDirty = true; return; }
-    stInflight = true; stDirty = false;
+    var wait = force ? 0 : lastSt + 20000 - Date.now();   /* v35: at most one cloud write per 20s (local + Telegram CloudStorage keep every change) */
+    if (wait > 0) { clearTimeout(stT); stT = setTimeout(function () { net.saveState(true); }, wait); return; }
+    lastSt = Date.now(); stInflight = true; stDirty = false;
     var f = { data: { stringValue: NX.pack() }, updated: { integerValue: String(Date.now()) } };
     http(base() + '/' + C('saves') + '/' + encodeURIComponent(String(u.id)) + '?updateMask.fieldPaths=data&updateMask.fieldPaths=updated&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: f }) })
       .then(function () { stInflight = false; if (stDirty) net.saveState(true); }, function () { stInflight = false; });
@@ -209,40 +233,72 @@
   net.getBan = function (id) {
     return http(base() + '/' + C('bans') + '/' + encodeURIComponent(String(id)) + '?' + key())
       .then(function (r) { return r.json(); })
-      .then(function (j) { var f = (j && j.fields) || {}; return (f.banned && f.banned.booleanValue) ? { banned: true, reason: str(f.reason) } : null; })
+      .then(function (j) {
+        var f = (j && j.fields) || {}, until = num(f.until);
+        if (!(f.banned && f.banned.booleanValue)) return null;
+        if (until && until <= Date.now()) return null;      /* timed ban already expired */
+        return { banned: true, reason: str(f.reason), until: until };
+      })
       .catch(function (e) { if (e && e.status === 404) return null; throw e; });
   };
-  net.setBan = function (id, banned, reason) {
-    var f = { banned: boolF(banned), reason: { stringValue: String(reason || '') }, by: { stringValue: String((NX.user() || {}).id || '') }, ts: { integerValue: String(Date.now()) } };
+  /* until = unix ms, 0 = forever */
+  net.setBan = function (id, banned, reason, until) {
+    var f = { banned: boolF(banned), reason: { stringValue: String(reason || '') }, by: { stringValue: String((NX.user() || {}).id || '') }, ts: { integerValue: String(Date.now()) }, until: { integerValue: String(Math.round(banned ? (until || 0) : 0)) } };
     var mask = Object.keys(f).map(function (k) { return 'updateMask.fieldPaths=' + k; }).join('&');
     return http(base() + '/' + C('bans') + '/' + encodeURIComponent(String(id)) + '?' + mask + '&' + key(), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: f }) }).then(function (r) { return r.json(); });
   };
   net.listBans = function () {
     return http(base() + '/' + C('bans') + '?pageSize=300&' + key()).then(function (r) { return r.json(); }).then(function (j) {
-      return (j.documents || []).map(function (d) { var f = d.fields || {}; return { id: d.name.split('/').pop(), banned: !!(f.banned && f.banned.booleanValue), reason: str(f.reason), ts: num(f.ts) }; }).filter(function (b) { return b.banned; });
+      return (j.documents || []).map(function (d) { var f = d.fields || {}; return { id: d.name.split('/').pop(), banned: !!(f.banned && f.banned.booleanValue), reason: str(f.reason), ts: num(f.ts), until: num(f.until) }; })
+        .filter(function (b) { return b.banned && (!b.until || b.until > Date.now()); });
     });
   };
-  function showBanScreen(reason) {
-    if (document.getElementById('banScreen')) return;
+  net.fmtLeft = function (ms) {
+    var s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60, p = [];
+    if (d) p.push(d + ' д'); if (d || h) p.push(h + ' ч'); p.push(m + ' мин'); if (!d) p.push(sec + ' с');
+    return p.join(' ');
+  };
+  /* Everything behind the overlay is blurred (backdrop-filter) and made inert; the card shows the term with a live countdown. */
+  var banTick = null;
+  function hideBanScreen() {
+    clearInterval(banTick); banTick = null;
+    var el = document.getElementById('banScreen'); if (el) el.remove();
+    var app = document.getElementById('app'); if (app) app.removeAttribute('inert');
+  }
+  function showBanScreen(reason, until) {
+    var ex = document.getElementById('banScreen'); if (ex) ex.remove(); clearInterval(banTick);
     var d = document.createElement('div'); d.id = 'banScreen';
-    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#07110d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;font-family:system-ui,sans-serif';
-    d.innerHTML = '<div style="font-size:54px;margin-bottom:12px">⛔</div><div style="font-size:22px;font-weight:800;margin-bottom:10px">Доступ закрыт</div>' +
-      '<div style="opacity:.8;max-width:320px;line-height:1.4">Ваш аккаунт заблокирован администрацией.' + (reason ? '<br><br>Причина: ' + NX.esc(reason) : '') + '</div>' +
-      '<a href="https://t.me/nexvendropmananger" style="margin-top:22px;padding:12px 26px;border-radius:14px;background:#2de6a0;color:#04130c;font-weight:800;text-decoration:none">Поддержка</a>';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(5,10,8,.45);-webkit-backdrop-filter:blur(16px) saturate(.8);backdrop-filter:blur(16px) saturate(.8);font-family:system-ui,-apple-system,sans-serif;color:#fff;touch-action:none';
+    var until_s = until ? new Date(until).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    d.innerHTML = '<div style="width:100%;max-width:340px;text-align:center;padding:26px 22px;border-radius:22px;background:rgba(10,20,16,.82);border:1px solid rgba(255,80,80,.35);box-shadow:0 20px 60px rgba(0,0,0,.5)">' +
+      '<div style="font-size:46px;line-height:1;margin-bottom:10px">⛔</div>' +
+      '<div style="font-size:21px;font-weight:800;margin-bottom:8px">Вы заблокированы</div>' +
+      '<div style="font-size:14px;opacity:.75;line-height:1.45;margin-bottom:14px">Доступ к приложению закрыт администрацией.</div>' +
+      '<div style="padding:12px;border-radius:14px;background:rgba(255,255,255,.06);margin-bottom:10px">' +
+        '<div style="font-size:12px;opacity:.6;margin-bottom:4px">' + (until ? 'Осталось' : 'Срок блокировки') + '</div>' +
+        '<div id="banLeft" style="font-size:20px;font-weight:800;color:#ff8a8a">' + (until ? NX.esc(net.fmtLeft(until - Date.now())) : 'навсегда') + '</div>' +
+        (until ? '<div style="font-size:12px;opacity:.6;margin-top:4px">до ' + NX.esc(until_s) + '</div>' : '') + '</div>' +
+      (reason ? '<div style="font-size:14px;margin-bottom:14px"><span style="opacity:.6">Причина:</span> ' + NX.esc(reason) + '</div>' : '<div style="height:6px"></div>') +
+      '<a href="https://t.me/nexvendropmananger" style="display:block;padding:13px;border-radius:14px;background:#2de6a0;color:#04130c;font-weight:800;text-decoration:none">Написать в поддержку</a></div>';
     document.body.appendChild(d);
-    try { NX.tg && NX.tg.disableVerticalSwipes && NX.tg.disableVerticalSwipes(); } catch (e) {}
+    var app = document.getElementById('app'); if (app) app.setAttribute('inert', '');
+    if (until) banTick = setInterval(function () {
+      var left = until - Date.now(), el = document.getElementById('banLeft');
+      if (left <= 0) { hideBanScreen(); try { NX.toast('Блокировка закончилась', 'success'); } catch (e) {} return; }
+      if (el) el.textContent = net.fmtLeft(left);
+    }, 1000);
   }
   var banT = 0;
-  net.checkBan = function () {
+  net.checkBan = function (force) {
     var u = NX.user(); if (!net.enabled() || !u) return;
     if (NX.isStaff && NX.isStaff()) return;      /* staff can't be locked out */
-    var now = Date.now(); if (now - banT < 8000) return; banT = now;
-    net.getBan(u.id).then(function (b) { if (b && b.banned) showBanScreen(b.reason); else { var el = document.getElementById('banScreen'); if (el) el.remove(); } }, function () {});
+    var now = Date.now(); if (!force && now - banT < 120000) return; banT = now;
+    net.getBan(u.id).then(function (b) { if (b && b.banned) showBanScreen(b.reason, b.until); else hideBanScreen(); }, function () {});
   };
-  var polling2 = false;
+  var polling2 = false, lastRw = 0;
   function refHint(t) { try { var el = document.getElementById('refSync'); if (el) el.textContent = t || ''; } catch (e) {} }
   net.pollRewards = function () {
-    var u = NX.user(); if (!net.enabled() || !u || !NX.ready || polling2) return; polling2 = true;
+    var u = NX.user(); if (!net.enabled() || !u || !NX.ready || polling2 || Date.now() - lastRw < 30000) return; polling2 = true; lastRw = Date.now();
     http(base() + '/' + C('rewards') + '/' + encodeURIComponent(String(u.id)) + '?' + key())
       .then(function (r) { return r.json(); })
       .then(function (j) {

@@ -12,7 +12,7 @@
     { id: 'craft', title: 'КРАФТ', desc: 'Улучшение предмета', tag: 'x1.5 – x5', art: 'craft' }
   ];
   NX.pages.games = {
-    enter: function () { clearInterval(onT); var upd = function () { if (NX.net.enabled()) NX.net.fetchOnline().then(function (n) { var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1); }, function () {}); }; upd(); onT = setInterval(upd, 20000); },
+    enter: function () { clearInterval(onT); var upd = function () { if (NX.net.enabled()) NX.net.fetchOnline().then(function (n) { var e = $('gmOnN'); if (e) e.textContent = Math.max(n, 1); }, function () {}); }; upd(); onT = setInterval(upd, 60000); },
     leave: function () { clearInterval(onT); },
     build: function () {
       $('v-games').innerHTML = '<div class="lb-online sm" id="gmOnline"><i class="dot"></i>Онлайн: <b id="gmOnN">1</b></div><div class="banners">' + GAMES.map(function (g, i) {
@@ -80,7 +80,7 @@
         NX.open('modInfo');
       };
     },
-    enter: function () { loadBoard(true); clearInterval(topT); topT = setInterval(function () { loadBoard(false); }, 15000); },
+    enter: function () { loadBoard(true); clearInterval(topT); topT = setInterval(function () { loadBoard(false); }, 60000); },
     leave: function () { clearInterval(topT); }
   };
 
@@ -271,8 +271,9 @@
       if (!/^\d{5,15}$/.test(id)) { banMsg(false, 'Введите числовой Telegram ID'); return; }
       if (on && protectedId(id)) { banMsg(false, 'Владельца и админов банить нельзя'); return; }
       if (!NX.net.enabled()) { banMsg(false, 'Нужен Firebase (config.js)'); return; }
-      NX.net.setBan(id, on, on ? $('banReason').value : '').then(function () {
-        banMsg(true, (on ? 'Забанен: ' : 'Разбанен: ') + id + (on ? ' (в боте блокировка включится в течение минуты)' : ''));
+      var secs = parseInt($('banDur').value, 10) || 0, until = secs ? Date.now() + secs * 1000 : 0;
+      NX.net.setBan(id, on, on ? $('banReason').value : '', until).then(function () {
+        banMsg(true, (on ? 'Забанен: ' : 'Разбанен: ') + id + (on ? (secs ? ' на ' + NX.net.fmtLeft(secs * 1000) : ' навсегда') + ' (в боте включится в течение минуты)' : ''));
         NX.toast(on ? 'Игрок заблокирован' : 'Блокировка снята', 'success'); NX.haptic('success'); NX.loadBans();
       }, function (er) { banMsg(false, (er && er.message) || 'Ошибка'); });
     }
@@ -296,7 +297,7 @@
     var box = $('banList'); if (!box || !NX.net.enabled()) return;
     NX.net.listBans().then(function (list) {
       box.innerHTML = list.length ? '<div class="lab" style="margin:10px 0 6px">В бане (' + list.length + ') — нажми, чтобы подставить ID</div>' + list.map(function (b) {
-        return '<button type="button" class="prow" data-bid="' + NX.esc(b.id) + '"><span>' + NX.esc(b.reason || 'без причины') + '</span><small>' + NX.esc(b.id) + '</small></button>';
+        return '<button type="button" class="prow" data-bid="' + NX.esc(b.id) + '"><span>' + NX.esc((b.until ? 'ещё ' + NX.net.fmtLeft(b.until - Date.now()) : 'навсегда') + ' · ' + (b.reason || 'без причины')) + '</span><small>' + NX.esc(b.id) + '</small></button>';
       }).join('') : '<div class="hint">Банов нет</div>';
     }, function () { box.innerHTML = ''; });
   };

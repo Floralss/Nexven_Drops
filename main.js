@@ -95,7 +95,7 @@
       NX.go('games', { force: true });
       prog(100);
       setInterval(NX.settleDue, 1000);
-      setInterval(function () { NX.cloudSave(); if (NX.net) NX.net.saveState(false); }, 15000);
+      setInterval(function () { NX.cloudSave(); if (NX.net) NX.net.saveState(false); }, 90000);
       function flush() { NX.save(true); }
       document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else NX.settleDue(); });
       window.addEventListener('pagehide', flush);
